@@ -34,7 +34,7 @@ Below commands assume you are still in `MultiCompMesher/build`
     ./MultiCompMesher BOUNDARY-FILE COMPONENT-FILE OUTPUT
     ```
     * BOUNDARY-FILE: a plain text file where each line stores
-    the path to a boundary surface mesh file
+    the path to a boundary surface mesh file (in `.off` format)
     * COMPONENT-FILE: a plain text file where each line labels
     the relationship between each component and the boundaries
     using `+` (inclusive) or `-` (exclusive) signs.  
