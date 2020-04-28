@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Implicit_to_labeling_function_wrapper.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
+#include <CGAL/Timer.h>
 
 #include <fstream>
 #include <functional>
@@ -98,8 +99,8 @@ int main(int argc, char*argv[])
         ("output,o", po::value<std::string>(), "Output mesh file")
         ("fc-angle", po::value<double>()->default_value(25.0), "Facet criteria - Angle")
         ("fc-size", po::value<double>()->default_value(25.0), "Facet criteria - Size")
-        ("fc-approx", po::value<double>()->default_value(5.0), "Facet criteria - Approximation")
-        ("cc-ratio", po::value<double>()->default_value(2.0), "Cell criteria - Radius-edge ratio")
+        ("fc-distance", po::value<double>()->default_value(5.0), "Facet criteria - Distance")
+        ("cc-ratio", po::value<double>()->default_value(2.0), "Cell criteria - Cell radius edge ratio")
         ("cc-size", po::value<double>()->default_value(25.0), "Cell criteria - Size")
         ("odt", po::bool_switch()->default_value(false), "Enable ODT mesh optimization")
         ("odt-time", po::value<double>()->default_value(10.0), "Time limit for ODT mesh optimization, in second")
@@ -111,6 +112,7 @@ int main(int argc, char*argv[])
         ("exude", po::bool_switch()->default_value(false), "Enable mesh sliver exudation")
         ("exude-time", po::value<double>()->default_value(10.0), "Time limit for sliver exudation, in second")
         ("exude-bound", po::value<double>()->default_value(0.0), "Targeted lower bound on dihedral angles of mesh cells for sliver exudation, in degree")
+        ("manifold", po::value<uint>()->default_value(0), "Mainfold restriction of the outout mesh. (0) No restriction (1) Manifold (2) Manifold with boundaries")
     ;
 
     po::positional_options_description p;
@@ -205,7 +207,16 @@ int main(int argc, char*argv[])
       return EXIT_FAILURE;
     }
 
+	  if(vm["manifold"].as<uint>() > 2)
+	  {
+      std::cerr << "Unknown manifold option. --manifold should be 0, 1, or 2.\n";
+      return EXIT_FAILURE;
+    }
+
     const std::size_t nb_patches = boundary_files.size();
+
+    CGAL::Timer t;
+    t.start();
 
     // Create domain
     std::cout << "Create domain..."<<std::endl;
@@ -252,17 +263,38 @@ int main(int argc, char*argv[])
     
     std::cout << "Meshing..."<<std::endl;
     // Set mesh criteria
-    Facet_criteria facet_criteria(vm["fc-angle"].as<double>(),vm["fc-size"].as<double>(), vm["fc-approx"].as<double>());
+    Facet_criteria facet_criteria(vm["fc-angle"].as<double>(),vm["fc-size"].as<double>(), vm["fc-distance"].as<double>());
     Cell_criteria cell_criteria(vm["cc-ratio"].as<double>(),vm["cc-size"].as<double>());
     Mesh_criteria criteria(facet_criteria, cell_criteria);
     // Mesh generation
+    
+    CGAL::parameters::internal::Manifold_options mo;
+    switch (vm["manifold"].as<uint>())
+    {
+    case 0:
+      mo = CGAL::parameters::non_manifold();
+      break;
+    
+    case 1:
+      mo = CGAL::parameters::manifold();
+      break;
+
+    case 2:
+      mo = CGAL::parameters::manifold_with_boundary();
+      break;
+
+    default:
+      mo = CGAL::parameters::non_manifold();
+    }
+
     C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, 
                                         vm["odt"].as<bool>()?odt(time_limit=vm["odt-time"].as<double>()):no_odt(),
                                         vm["lloyd"].as<bool>()?lloyd(time_limit=vm["lloyd-time"].as<double>()):no_lloyd(),
                                         vm["perturb"].as<bool>()?perturb(time_limit=vm["perturb-time"].as<double>(), 
                                                                                       sliver_bound=vm["perturb-bound"].as<double>()):no_perturb(),
                                         vm["exude"].as<bool>()?exude(time_limit=vm["exude-time"].as<double>(), 
-                                                                                      sliver_bound=vm["exude-bound"].as<double>()):no_exude());
+                                                                                      sliver_bound=vm["exude-bound"].as<double>()):no_exude(),
+                                        mo);
     
     // Output
     std::ofstream medit_file(output_file);
@@ -273,6 +305,7 @@ int main(int argc, char*argv[])
     for(std::size_t i = 0; i < nb_patches; ++i) {
       delete domain_ptrs[i];
     }
+    std::cout << "Time cost: " << t.time() << " sec." << std::endl;
 
     return EXIT_SUCCESS;
   }

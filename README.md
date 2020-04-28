@@ -79,7 +79,7 @@ The command to generate the mesh is
 ```
 # assume still in MultiCompMesher/build
 
-./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/output --fc-size 0.01 --fc-approx 0.001 --cc-size 0.05 --odt --lloyd --perturb --exude
+./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/output --fc-size 0.01 --fc-distance 0.001 --cc-size 0.05 --odt --lloyd --perturb --exude
 ```
 The mesh is written to [output.mesh](example/output.mesh), then visualized
 in Gmsh. Note that each component are labelled and colorred individually. To use the mesh in [STEPS](http://steps.sourceforge.net), the user need to
