@@ -29,13 +29,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Implicit_to_labeling_function_wrapper.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
+#include <CGAL/Mesh_constant_domain_field_3.h>
 #include <CGAL/Timer.h>
 
+#include <algorithm>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <string>
 #include <vector>
+#include <tuple>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 
 #include "mesh_repair.h"
@@ -59,6 +64,8 @@ typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> C3t3;
 typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
 typedef Mesh_criteria::Facet_criteria    Facet_criteria;
 typedef Mesh_criteria::Cell_criteria     Cell_criteria;
+typedef CGAL::Mesh_constant_domain_field_3<Mesh_domain::R,
+                                           Mesh_domain::Index> Sizing_field;
 
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
@@ -80,16 +87,15 @@ typedef Function_wrapper::Function_vector Function_vector;
 FT func(Point p, Submesh_domain* d)
 {
   if(d->is_in_domain_object()(p)) {
-    return 1.0;
+    return -1.0;
   }
   else {
-    return -1.0;
+    return 1.0;
   }
 }
 
 int main(int argc, char*argv[])
 {
-  std::string output_file;
   try {
     po::options_description desc("Options");
     desc.add_options()
@@ -97,6 +103,7 @@ int main(int argc, char*argv[])
         ("boundary-file,ib", po::value<std::string>(), "Boundary file")
         ("component-file,id", po::value<std::string>(), "Domain file")
         ("output,o", po::value<std::string>(), "Output mesh file")
+        ("size-field-file", po::value<std::string>(), "Special size field setting file.")
         ("fc-angle", po::value<double>()->default_value(25.0), "Facet criteria - Angle")
         ("fc-size", po::value<double>()->default_value(25.0), "Facet criteria - Size")
         ("fc-distance", po::value<double>()->default_value(5.0), "Facet criteria - Distance")
@@ -155,6 +162,7 @@ int main(int argc, char*argv[])
       return EXIT_FAILURE;
     }
 
+    std::string output_file;
     if (vm.count("output"))
     {
         if(ends_with(vm["output"].as<std::string>(), ".mesh")) {
@@ -196,7 +204,7 @@ int main(int argc, char*argv[])
  
 	  if(result)
 	  {
-      std::cout << "component domain signs:\n";
+      std::cout << "component domains:\n";
 		  for(std::string & line : domain_signs) {
 			  std::cout<<line<<std::endl;
       }
@@ -215,6 +223,64 @@ int main(int argc, char*argv[])
 
     const std::size_t nb_patches = boundary_files.size();
 
+    std::map<std::pair<int,int>, double> fc_size_field_map;
+    std::map<std::pair<int,int>, double> fc_length_field_map;
+    std::map<int, double> cc_size_field_map;
+
+    if (vm.count("size-field-file")) {
+      std::vector<std::string> size_field_settings;
+      bool result = getFileContent(vm["size-field-file"].as< std::string>(), size_field_settings);
+ 
+      if(result)
+      {
+        for(std::string & line : size_field_settings)
+        {
+          std::vector <std::string> fields;
+          boost::split(fields, line, boost::is_any_of(" "));
+          if (fields[0].compare("patch") == 0 && fields.size() == 5) {
+            int c1 = std::stoi(fields[1]);
+            int c2 = std::stoi(fields[2]);
+            if(c1 < 0 or c2 < 0 or c1 == c2) {
+              std::cerr << "Unable to define the patch with compoment id " << c1 << " and" << c2 << "\n";
+              std::cerr << "The two compoment ids should not be nagative or the same.\n";
+              return EXIT_FAILURE;
+            }
+            double patch_size_field = std::stod(fields[3]);
+            double patch_length_field =  std::stod(fields[4]);
+            auto domain_pair = c1<c2 ? std::pair<int, int>(c1, c2) : std::pair<int, int>(c2, c1);
+            fc_size_field_map[domain_pair] = patch_size_field;
+            fc_length_field_map[domain_pair] = patch_length_field;
+            std::cout << "Setting size field for patch between component " << domain_pair.first << " and " << domain_pair.second << ":\n";
+            std::cout << "Facet size: " << patch_size_field << " Facet length: " << patch_length_field << "\n\n";
+          }
+          else if (fields[0].compare("component") == 0 && fields.size() == 3) {
+            int comp = std::stoi(fields[1]);
+            if(comp <= 0) {
+              std::cerr << "Unable to identy the compoment with id " << comp << "\n";
+              std::cerr << "The compoment id should be positive. Component 0 denotes the outer space so no sizing field is needed.\n";
+              return EXIT_FAILURE;
+            }
+            double component_size_field = std::stod(fields[2]);
+            cc_size_field_map[comp] = component_size_field;
+            std::cout << "Setting size field for component " << comp << ": " << component_size_field << "\n\n";
+          }
+          else {
+            std::cerr << "Unknown size field setting: " << line << ".\n\n";
+            std::cerr << "patch setting example: patch 0 1 0.1 0.01\n";
+            std::cerr << "The above line sets the facet size of patch between component 0 and 1 to 0.1, and facet distance to 0.01\n";
+            std::cerr << "component setting example: component 1 0.1\n";
+            std::cerr << "The above line sets the cell size of component 0 to 0.1\n";
+            std::cerr << "Note that component 0 denotes the outer space, so the actual component id starts from 1, so patch 0 1 is on the surface boundary.\n\n";
+            return EXIT_FAILURE;
+          }
+        }
+      }
+      else {
+        std::cerr << "Unable to read size field setting file " << vm["size-field-file"].as< std::string>() << ".\n";
+        return EXIT_FAILURE;
+      }
+    }
+    
     CGAL::Timer t;
     t.start();
 
@@ -225,6 +291,7 @@ int main(int argc, char*argv[])
     std::vector<Polyhedron> patches(nb_patches);
     CGAL::Bbox_3 bounding_box;
     bool restart_needed = false;
+
     for(std::size_t i = 0; i < nb_patches; ++i) {
       std::ifstream input(boundary_files[i]);
       if(!(input >> patches[i])) {
@@ -252,19 +319,45 @@ int main(int argc, char*argv[])
 
     const std::size_t n_components = domain_signs.size();
     std::vector<std::string> vps;
+
     for(std::size_t i = 0; i < n_components; ++i) {
+      int n_pos_signs = std::count(domain_signs[i].begin(), domain_signs[i].end(), '+');
+      int n_neg_signs = std::count(domain_signs[i].begin(), domain_signs[i].end(), '-');
+      if(n_pos_signs + n_neg_signs != nb_patches) {
+        std::cerr << "Component signs should contain only + and -.\n";
+        std::cerr << "The number of signs of each component should be the same as the number of boundary meshes.\n";
+        return EXIT_FAILURE;
+      }
       vps.push_back(domain_signs[i]);
     }
-
+    
+    std::cout << "Meshing..."<<std::endl;
     namespace param = CGAL::parameters;
     Mesh_domain domain(param::function = Function_wrapper(v, vps), 
                       param::bounding_object = bounding_box,
                       param::relative_error_bound = 1e-6);
     
-    std::cout << "Meshing..."<<std::endl;
+    Sizing_field fc_size_field(vm["fc-size"].as<double>());
+    for (auto & c : fc_size_field_map)
+    {
+        fc_size_field.set_size(c.second, 2, domain.index_from_surface_patch_index(c.first));
+    }
+
+    Sizing_field fc_length_field(vm["fc-distance"].as<double>());
+    for (auto & c : fc_length_field_map)
+    {
+        fc_length_field.set_size(c.second, 2, domain.index_from_surface_patch_index(c.first));
+    }
+
+    Sizing_field cc_size_field(vm["cc-size"].as<double>());
+    for (auto & c : cc_size_field_map)
+    {
+        cc_size_field.set_size(c.second, 3, domain.index_from_subdomain_index(c.first));
+    }
+    
     // Set mesh criteria
-    Facet_criteria facet_criteria(vm["fc-angle"].as<double>(),vm["fc-size"].as<double>(), vm["fc-distance"].as<double>());
-    Cell_criteria cell_criteria(vm["cc-ratio"].as<double>(),vm["cc-size"].as<double>());
+    Facet_criteria facet_criteria(vm["fc-angle"].as<double>(),fc_size_field, fc_length_field);
+    Cell_criteria cell_criteria(vm["cc-ratio"].as<double>(),cc_size_field);
     Mesh_criteria criteria(facet_criteria, cell_criteria);
     // Mesh generation
     

@@ -1,0 +1,4 @@
+# patch between cyto and ER
+patch 1 3 0.05 0.001
+# component 2 (PSD)
+component 2 0.01

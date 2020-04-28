@@ -53,8 +53,9 @@ inline bool getFileContent(std::string fileName, std::vector<std::string> & vecO
 	std::string str;
 	while (std::getline(in, str))
 	{
-		if(str.size() > 0)
+		if(str.size() > 0 && str.find("#") != 0) {
 			vecOfStrs.push_back(str);
+		}
 	}
 	in.close();
 	return true;

@@ -37,11 +37,11 @@ Below commands assume you are still in `MultiCompMesher/build`
     the path to a boundary surface mesh file (in `.off` format)
     * COMPONENT-FILE: a plain text file where each line labels
     the relationship between each component and the boundaries
-    using `+` (inclusive) or `-` (exclusive) signs.  
+    using `+` (exclusive) or `-` (inclusive) signs.  
     For example,  assume that there are three boundaries, b1, b2 
-    and b3. A component labelled `+--` means the tetrahedrons of the 
+    and b3. A component labelled `-++` means the tetrahedrons of the 
     component should be in b1, and should not be in b2 and b3. 
-    A component labelled `-++` means the tetrahedrons of the component 
+    A component labelled `+--` means the tetrahedrons of the component 
     should not be in b1, but should be in both b2 and b3.
     * OUTPUT: Path to the output mesh file. The output mesh is in .mesh
     format, which can be opened and converted to other formats in 
@@ -74,9 +74,9 @@ boundary surfaces.
 3. [PSD boundary](example/PSD.off)
 
 The [component file](example/components.txt) defines three components.  
-1. The spine cytosol excluding ER and PSD: `+--`
-2. The ER: `++-`
-3. The PSD: `+-+`
+1. The spine cytosol excluding ER and PSD: `-++`
+2. The ER: `--+`
+3. The PSD: `-+-`
 
 The command to generate the mesh is
 ```
