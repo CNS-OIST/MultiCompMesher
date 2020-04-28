@@ -247,7 +247,7 @@ int main(int argc, char*argv[])
             }
             double patch_size_field = std::stod(fields[3]);
             double patch_length_field =  std::stod(fields[4]);
-            auto domain_pair =std::pair<int, int>(c1, c2);
+            auto domain_pair = c1<c2 ? std::pair<int, int>(c1, c2) : std::pair<int, int>(c2, c1);
             fc_size_field_map[domain_pair] = patch_size_field;
             fc_length_field_map[domain_pair] = patch_length_field;
             std::cout << "Setting size field for patch between component " << domain_pair.first << " and " << domain_pair.second << ":\n";
