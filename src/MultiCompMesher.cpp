@@ -241,8 +241,8 @@ int main(int argc, char*argv[])
             int c1 = std::stoi(fields[1]);
             int c2 = std::stoi(fields[2]);
             if(c1 < 0 or c2 < 0 or c1 == c2) {
-              std::cerr << "Unable to define the patch with compoment id " << c1 << " and" << c2 << "\n";
-              std::cerr << "The two compoment ids should not be nagative or the same.\n";
+              std::cerr << "Unable to define the patch with component id " << c1 << " and" << c2 << "\n";
+              std::cerr << "The two component ids should not be negative or the same.\n";
               return EXIT_FAILURE;
             }
             double patch_size_field = std::stod(fields[3]);
@@ -256,8 +256,8 @@ int main(int argc, char*argv[])
           else if (fields[0].compare("component") == 0 && fields.size() == 3) {
             int comp = std::stoi(fields[1]);
             if(comp <= 0) {
-              std::cerr << "Unable to identy the compoment with id " << comp << "\n";
-              std::cerr << "The compoment id should be positive. Component 0 denotes the outer space so no sizing field is needed.\n";
+              std::cerr << "Unable to identify the component with id " << comp << "\n";
+              std::cerr << "The component id should be positive. Component 0 denotes the outer space so no sizing field is needed.\n";
               return EXIT_FAILURE;
             }
             double component_size_field = std::stod(fields[2]);

@@ -36,7 +36,7 @@ Below commands assume you are still in `MultiCompMesher/build`
     * BOUNDARY-FILE: a plain text file where each line stores
     the path to a boundary surface mesh file (in `.off` format).  
     All lines start with the `#` sign are considered as comments,
-    and will be ignored by the program. Empty lines are also ingored.
+    and will be ignored by the program. Empty lines are also ignored.
 
     * COMPONENT-FILE: a plain text file where each line labels
     the relationship between each component and the boundaries
@@ -49,7 +49,7 @@ Below commands assume you are still in `MultiCompMesher/build`
     The first component appears in the file will be labelled as component 1,
     and the rest will be labelled by incremental order.  
     All lines start with the `#` sign are considered as comments,
-    and will be ignored by the program. Empty lines are also ingored.
+    and will be ignored by the program. Empty lines are also ignored.
 
     * OUTPUT: Path to the output mesh file. The output mesh is in .mesh
     format, which can be opened and converted to other formats in 
@@ -58,7 +58,7 @@ Below commands assume you are still in `MultiCompMesher/build`
 * Advance usage  
     * Mesh repairing
     
-        If there is problem with one of more boundary meshes, such as orintation issue, 
+        If there is problem with one of more boundary meshes, such as orientation issue, 
         this program will try to repair the mesh and save
         the repaired version to another file. In this case, please change the
         corresponding file path in your `BOUNDARY-FILE` and rerun the program.
@@ -68,12 +68,12 @@ Below commands assume you are still in `MultiCompMesher/build`
         The `--size-field-file SIZING-FIELD-FILE` option accepts a `SIZING-FIELD-FILE` as input, 
         allowing individual configuration of patches and components over the global settings.
         This is particularly useful if the user wants to increase the fineness of a 
-        specific patch/component without drmatical increase of global element count.
+        specific patch/component without dramatic increase of global element count.
 
         A `SIZING-FIELD-FILE` is a plain text file similar to [the example file](example/sizefields.txt)
 
         ```
-        # patch between cyto and ER
+        # patch between Cyto and ER
         patch 1 3 0.005 0.0001
         # component 2 (PSD)
         component 2 0.005
@@ -83,7 +83,7 @@ Below commands assume you are still in `MultiCompMesher/build`
         1. Comments and empty lines
             
             Lines start with `#` are considered as comment and will be skipped in the process.
-            Empty lines are also ingored.
+            Empty lines are also ignored.
 
         2. Patch setting
 
@@ -95,7 +95,7 @@ Below commands assume you are still in `MultiCompMesher/build`
             patch of surface boundary formed by component 1.
 
             `PATCH-FC-SIZE` and `PATCH-FC-DISTANCE` are the `fc-size` and `fc-distance` 
-            configuratrion specific to this patch.
+            configuration specific to this patch.
 
         3. Component setting
 
@@ -106,7 +106,7 @@ Below commands assume you are still in `MultiCompMesher/build`
             note that 0 is the `COMPONENT-ID` for outer space, so `COMPONENT-ID` should always
             be positive.
 
-            `COMPONENT-CC-SIZE` is the `cc-size` configuratrion specific to this component.
+            `COMPONENT-CC-SIZE` is the `cc-size` configuration specific to this component.
     
 Other parameters can be set to control the meshing process and optimize the mesh quality. 
 You can list them using
@@ -142,7 +142,7 @@ The command to generate the mesh is
 ./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/output --fc-size 0.01 --fc-distance 0.001 --cc-size 0.05 --odt --lloyd --perturb --exude
 ```
 The mesh is written to [output.mesh](example/output.mesh), then visualized
-in Gmsh. Note that each component are labelled and colorred individually. To use the mesh in [STEPS](http://steps.sourceforge.net), the user need to
+in Gmsh. Note that each component are labelled and colored individually. To use the mesh in [STEPS](http://steps.sourceforge.net), the user need to
 export it to the Abaqus inp format or the Gmsh 2.0 ASCii format in Gmsh.
 ![Mesh visualization in Gmsh](example/mesh_view.png)
 
