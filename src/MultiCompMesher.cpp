@@ -56,8 +56,13 @@ typedef CGAL::Polyhedron_3<K> Polyhedron;
 typedef CGAL::Polyhedral_mesh_domain_3<Polyhedron, K> Submesh_domain;
 typedef CGAL::Labeled_mesh_domain_3<K> Mesh_domain;
 
+#ifdef CGAL_CONCURRENT_MESH_3
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
 // Triangulation
-typedef CGAL::Mesh_triangulation_3<Mesh_domain>::type Tr;
+typedef CGAL::Mesh_triangulation_3<Mesh_domain,CGAL::Default,Concurrency_tag>::type Tr;
 typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> C3t3;
 
 // Mesh Criteria
@@ -96,6 +101,12 @@ FT func(Point p, Submesh_domain* d)
 
 int main(int argc, char*argv[])
 {
+  #ifdef CGAL_CONCURRENT_MESH_3
+    std::cout << "Running in concurrency mode.\n";
+  #else
+    std::cout << "Running in sequential mode.\n";
+  #endif
+
   try {
     po::options_description desc("Options");
     desc.add_options()

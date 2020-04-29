@@ -13,6 +13,9 @@ if(POLICY CMP0074)
 endif()
 find_package(CGAL COMPONENTS ImageIO)
 
+
+option(ACTIVATE_CONCURRENCY "Enable concurrency" ON)
+
 if ( CGAL_FOUND )
   include( ${CGAL_USE_FILE} )
   create_single_source_cgal_program( "src/MultiCompMesher.cpp" )
@@ -24,8 +27,19 @@ if ( CGAL_FOUND )
     message(STATUS "This program requires the Boost library, and will not be compiled.")
   endif()
 
+  if( ACTIVATE_CONCURRENCY )
+    find_package( TBB QUIET )
+    
+    if( TBB_FOUND )
+      include( CGAL_target_use_TBB )
+      CGAL_target_use_TBB(MultiCompMesher)
+      add_definitions(-DCGAL_CONCURRENT_MESH_3)
+      message(STATUS "NOTICE: Concurrency enabled.")
+
+    else()
+      message(STATUS "NOTICE: Unable to find TBB, concurrency will be disabled.")
+    endif()
+  endif()
 else()
-  
-    message(STATUS "This program requires the CGAL library, and will not be compiled.")
-  
+  message(STATUS "This program requires the CGAL library, and will not be compiled.")
 endif()
