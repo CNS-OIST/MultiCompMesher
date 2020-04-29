@@ -1,6 +1,6 @@
-# Cyto
+# Cyto component 1
 -++
-# PSD
+# PSD component 2
 --+
-# ER
+# ER component 3
 -+-
