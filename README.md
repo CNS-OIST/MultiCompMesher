@@ -36,7 +36,7 @@ Below commands assume you are still in `MultiCompMesher/build`
     * BOUNDARY-FILE: a plain text file where each line stores
     the path to a boundary surface mesh file (in `.off` format).  
     All lines start with the `#` sign are considered as comments,
-    and will be ignored by the program.
+    and will be ignored by the program. Empty lines are also ingored.
 
     * COMPONENT-FILE: a plain text file where each line labels
     the relationship between each component and the boundaries
@@ -49,7 +49,7 @@ Below commands assume you are still in `MultiCompMesher/build`
     The first component appears in the file will be labelled as component 1,
     and the rest will be labelled by incremental order.  
     All lines start with the `#` sign are considered as comments,
-    and will be ignored by the program.
+    and will be ignored by the program. Empty lines are also ingored.
 
     * OUTPUT: Path to the output mesh file. The output mesh is in .mesh
     format, which can be opened and converted to other formats in 
@@ -80,9 +80,10 @@ Below commands assume you are still in `MultiCompMesher/build`
         ```
 
         Three types of inputs are accepted in the file:
-        1. Comment
+        1. Comments and empty lines
             
             Lines start with `#` are considered as comment and will be skipped in the process.
+            Empty lines are also ingored.
 
         2. Patch setting
 
