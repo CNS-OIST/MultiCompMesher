@@ -56,6 +56,16 @@ Below commands assume you are still in `MultiCompMesher/build`
     [Gmsh](http://gmsh.info/).
 
 * Advance usage  
+    * Concurrency (Parallel) mode 
+    
+        If [Intel's TBB library](https://software.intel.com/en-us/tbb) is installed and found, 
+        the program will try to use [concurrency mode](https://github.com/CGAL/cgal/wiki/Concurrency-in-CGAL) 
+        for meshing. User can disable it and use sequential mode instead by setting the `ACTIVATE_CONCURRENCY`
+        flag
+        ```
+        cmake -DACTIVATE_CONCURRENCY=OFF ..
+        ```
+        
     * Mesh repairing
     
         If there is problem with one of more boundary meshes, such as orientation issue, 
