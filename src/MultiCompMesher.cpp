@@ -145,7 +145,7 @@ int main(int argc, char*argv[])
     po::notify(vm);
 
     if (vm.count("help")) {
-        std::cout << "Usage: ./labelmesher boundary-file component-file output [options]\n";
+        std::cout << "Usage: ./MultiCompMesher boundary-file component-file output [options]\n";
         std::cout << desc;
         return 0;
     }
@@ -157,7 +157,7 @@ int main(int argc, char*argv[])
     }
     else {
       std::cerr << "Boundary file is required.\n";
-      std::cerr << "Usage: ./labelmesher boundary-file component-file output [options]\n";
+      std::cerr << "Usage: ./MultiCompMesher boundary-file component-file output [options]\n";
       std::cerr << desc;
       return EXIT_FAILURE;
     }
@@ -168,7 +168,7 @@ int main(int argc, char*argv[])
     }
     else {
       std::cerr << "Component file is required.\n";
-      std::cerr << "Usage: ./labelmesher boundary-file component-file output [options]\n";
+      std::cerr << "Usage: ./MultiCompMesher boundary-file component-file output [options]\n";
       std::cerr << desc;
       return EXIT_FAILURE;
     }
@@ -187,7 +187,7 @@ int main(int argc, char*argv[])
     }
     else {
       std::cerr << "Output file name is required.\n";
-      std::cerr << "Usage: ./labelmesher boundary-file component-file output [options]\n";
+      std::cerr << "Usage: ./MultiCompMesher boundary-file component-file output [options]\n";
       std::cerr << desc;
       return EXIT_FAILURE;
     }
