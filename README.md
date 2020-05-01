@@ -5,9 +5,12 @@ generate element-labelled multi-component tetrahedral mesh.
 
 
 This program reads a list of watertight boundary surface meshes,
-and a sign file descripting the spatial relationship between each 
+and a sign file describing the spatial relationship between each 
 desired component and the boundary meshes, then generates a tetrahedral mesh with each component labelled separately according to the boundaries
 and the component signs.
+
+This program can not generate tetrahedral mesh from `.swc` morphology data commonly
+acquired from Light Microscopic (LM) imaging. For this purpose please visit [https://github.com/CNS-OIST/SWCMesher](https://github.com/CNS-OIST/SWCMesher).
 
 # Prerequisite
 * git
@@ -56,16 +59,6 @@ Below commands assume you are still in `MultiCompMesher/build`
     [Gmsh](http://gmsh.info/).
 
 * Advance usage  
-    * Concurrency (Parallel) mode 
-    
-        If [Intel's TBB library](https://software.intel.com/en-us/tbb) is installed and found, 
-        the program will try to use [concurrency mode](https://github.com/CGAL/cgal/wiki/Concurrency-in-CGAL) 
-        for meshing. User can disable it and use sequential mode instead by setting the `ACTIVATE_CONCURRENCY`
-        flag
-        ```
-        cmake -DACTIVATE_CONCURRENCY=OFF ..
-        ```
-        
     * Mesh repairing
     
         If there is problem with one of more boundary meshes, such as orientation issue, 
@@ -127,6 +120,15 @@ You can list them using
 The usage of these parameters can be found in the 
 [CGAL 3D mesh generation manual](https://doc.cgal.org/latest/Mesh_3/index.html).
 
+# Concurrency (Parallel) mode 
+    
+If [Intel's TBB library](https://software.intel.com/en-us/tbb) is installed and found, 
+the program will try to use [concurrency mode](https://github.com/CGAL/cgal/wiki/Concurrency-in-CGAL) 
+for meshing. User can disable it and uses sequential mode instead by setting the `ACTIVATE_CONCURRENCY` flag in compilation
+
+```
+cmake -DACTIVATE_CONCURRENCY=OFF ..
+```
 
 # Example
 
