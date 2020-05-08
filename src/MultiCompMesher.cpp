@@ -78,8 +78,8 @@ class FT_to_point_function_wrapper: public CGAL::cpp98::unary_function<P, FT> {
 
   public:
     typedef P Point;
-    FT_to_point_function_wrapper(std::function<FT(P)> f)
-        : function(f) {}
+    explicit FT_to_point_function_wrapper(std::function<FT(P)> f)
+        : function(std::move(f)) {}
     FT operator()(P p) const {
         return function(p);
     }
@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
         if (result) {
             std::cout << "boundary mesh files:\n";
             for (std::string& line: boundary_files) {
-                std::cout << line << std::endl;
+                std::cout << line << '\n';
             }
             std::cout << "\n";
         } else {
@@ -220,7 +220,7 @@ int main(int argc, char* argv[]) {
         if (result) {
             std::cout << "component domains:\n";
             for (std::string& line: domain_signs) {
-                std::cout << line << std::endl;
+                std::cout << line << '\n';
             }
             std::cout << "\n";
         } else {
@@ -245,10 +245,10 @@ int main(int argc, char* argv[]) {
                                          size_field_settings);
 
             if (result) {
-                for (std::string& line: size_field_settings) {
+                for (const std::string& line: size_field_settings) {
                     std::vector<std::string> fields;
                     boost::split(fields, line, boost::is_any_of(" "));
-                    if (fields[0].compare("patch") == 0 && fields.size() == 5) {
+                    if (fields[0] =="patch" && fields.size() == 5) {
                         int c1 = std::stoi(fields[1]);
                         int c2 = std::stoi(fields[2]);
                         if (c1 < 0 or c2 < 0 or c1 == c2) {
@@ -268,7 +268,7 @@ int main(int argc, char* argv[]) {
                                   << domain_pair.first << " and " << domain_pair.second << ":\n";
                         std::cout << "Facet size: " << patch_size_field
                                   << " Facet length: " << patch_length_field << "\n\n";
-                    } else if (fields[0].compare("component") == 0 && fields.size() == 3) {
+                    } else if (fields[0] == "component" && fields.size() == 3) {
                         int comp = std::stoi(fields[1]);
                         if (comp <= 0) {
                             std::cerr << "Unable to identify the component with id " << comp
@@ -305,7 +305,7 @@ int main(int argc, char* argv[]) {
         t.start();
 
         // Create domain
-        std::cout << "Create domain..." << std::endl;
+        std::cout << "Create domain...\n";
         std::vector<std::unique_ptr<Submesh_domain>> domain_ptrs;
         Function_vector v;
         std::vector<Polyhedron> patches(nb_patches);
@@ -352,7 +352,7 @@ int main(int argc, char* argv[]) {
             vps.push_back(domain_signs[i]);
         }
 
-        std::cout << "Meshing..." << std::endl;
+        std::cout << "Meshing...\n";
         namespace param = CGAL::parameters;
         Mesh_domain domain(param::function = Function_wrapper(v, vps),
                            param::bounding_object = bounding_box,
@@ -416,9 +416,8 @@ int main(int argc, char* argv[]) {
             CGAL::output_to_medit(medit_file, c3t3);
         }
 
-        std::cout << "Mesh has been written to " << output_file << std::endl;
-
-        std::cout << "Time cost: " << t.time() << " sec." << std::endl;
+        std::cout << "Mesh has been written to " << output_file
+                  << "\nTime cost: " << t.time() << " sec.\n";
 
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
