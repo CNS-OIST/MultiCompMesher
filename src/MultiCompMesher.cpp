@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-
 #include <CGAL/Implicit_to_labeling_function_wrapper.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
@@ -31,6 +30,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <CGAL/Timer.h>
 #include <CGAL/boost/graph/helpers.h>
 #include <CGAL/make_mesh_3.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/program_options.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -39,9 +40,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/program_options.hpp>
 
 #include "mesh_repair.h"
 #include "utility.h"
@@ -90,8 +88,8 @@ typedef FT_to_point_function_wrapper<K::FT, K::Point_3> Function;
 typedef CGAL::Implicit_multi_domain_to_labeling_function_wrapper<Function> Function_wrapper;
 typedef Function_wrapper::Function_vector Function_vector;
 
-FT func(Point p, Submesh_domain* d) {
-    if (d->is_in_domain_object()(p)) {
+static inline FT func(const Point& p, const Submesh_domain& d) {
+    if (d.is_in_domain_object()(p)) {
         return -1.0;
     } else {
         return 1.0;
@@ -308,7 +306,7 @@ int main(int argc, char* argv[]) {
 
         // Create domain
         std::cout << "Create domain..." << std::endl;
-        std::vector<Submesh_domain*> domain_ptrs;
+        std::vector<std::unique_ptr<Submesh_domain>> domain_ptrs;
         Function_vector v;
         std::vector<Polyhedron> patches(nb_patches);
         CGAL::Bbox_3 bounding_box;
@@ -325,10 +323,10 @@ int main(int argc, char* argv[]) {
             if (restart_needed) {
                 continue;
             }
-            Submesh_domain* d = new Submesh_domain(patches[i]);
-            domain_ptrs.push_back(d);
-            bounding_box += d->bbox();
-            std::function<FT(Point)> func1 = [=](Point p) { return func(p, d); };
+            domain_ptrs.emplace_back(new Submesh_domain(patches[i]));
+            const auto& domain = *domain_ptrs.back();
+            bounding_box += domain.bbox();
+            std::function<FT(Point)> func1 = [&domain](Point p) { return func(p, domain); };
             Function f(func1);
             v.push_back(f);
         }
@@ -361,17 +359,17 @@ int main(int argc, char* argv[]) {
                            param::relative_error_bound = 1e-6);
 
         Sizing_field fc_size_field(vm["fc-size"].as<double>());
-        for (auto& c: fc_size_field_map) {
+        for (const auto& c: fc_size_field_map) {
             fc_size_field.set_size(c.second, 2, domain.index_from_surface_patch_index(c.first));
         }
 
         Sizing_field fc_length_field(vm["fc-distance"].as<double>());
-        for (auto& c: fc_length_field_map) {
+        for (const auto& c: fc_length_field_map) {
             fc_length_field.set_size(c.second, 2, domain.index_from_surface_patch_index(c.first));
         }
 
         Sizing_field cc_size_field(vm["cc-size"].as<double>());
-        for (auto& c: cc_size_field_map) {
+        for (const auto& c: cc_size_field_map) {
             cc_size_field.set_size(c.second, 3, domain.index_from_subdomain_index(c.first));
         }
 
@@ -413,19 +411,18 @@ int main(int argc, char* argv[]) {
             mo);
 
         // Output
-        std::ofstream medit_file(output_file);
-        CGAL::output_to_medit(medit_file, c3t3);
+        {
+            std::ofstream medit_file(output_file);
+            CGAL::output_to_medit(medit_file, c3t3);
+        }
 
         std::cout << "Mesh has been written to " << output_file << std::endl;
 
-        for (std::size_t i = 0; i < nb_patches; ++i) {
-            delete domain_ptrs[i];
-        }
         std::cout << "Time cost: " << t.time() << " sec." << std::endl;
 
         return EXIT_SUCCESS;
-    } catch (std::exception& e) {
-        std::cout << e.what() << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
         return EXIT_FAILURE;
     }
 }
