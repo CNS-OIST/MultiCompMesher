@@ -11,11 +11,17 @@ endif()
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
-find_package(CGAL COMPONENTS ImageIO)
+find_package(
+  CGAL
+  COMPONENTS ImageIO
+  REQUIRED)
 
 option(ACTIVATE_CONCURRENCY "Enable concurrency" ON)
 
 if(CGAL_FOUND)
+  if(CGAL_MAJOR_VERSION LESS 5)
+    message(SEND_ERROR "CGAL ${CGAL_VERSION} was found but version 5 or higher is required.")
+  endif()
   include(${CGAL_USE_FILE})
   create_single_source_cgal_program("src/MultiCompMesher.cpp")
   find_package(
