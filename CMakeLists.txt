@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
-project( MultiCompMesher )
+project(MultiCompMesher)
 
 add_definitions(-DCGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX
                 -DCGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS)
 
-if ( MESH_3_VERBOSE )
+if(MESH_3_VERBOSE)
   add_definitions(-DCGAL_MESH_3_VERBOSE)
 endif()
 
@@ -13,26 +13,28 @@ if(POLICY CMP0074)
 endif()
 find_package(CGAL COMPONENTS ImageIO)
 
-
 option(ACTIVATE_CONCURRENCY "Enable concurrency" ON)
 
-if ( CGAL_FOUND )
-  include( ${CGAL_USE_FILE} )
-  create_single_source_cgal_program( "src/MultiCompMesher.cpp" )
-  find_package(Boost COMPONENTS program_options REQUIRED)
+if(CGAL_FOUND)
+  include(${CGAL_USE_FILE})
+  create_single_source_cgal_program("src/MultiCompMesher.cpp")
+  find_package(
+    Boost
+    COMPONENTS program_options
+    REQUIRED)
   if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    TARGET_LINK_LIBRARIES( "MultiCompMesher" LINK_PUBLIC ${Boost_LIBRARIES} )
+    target_link_libraries("MultiCompMesher" LINK_PUBLIC ${Boost_LIBRARIES})
   else()
     message(STATUS "This program requires the Boost library, and will not be compiled.")
   endif()
 
-  if( ACTIVATE_CONCURRENCY )
-    find_package( TBB QUIET )
-    
-    if( TBB_FOUND )
-      include( CGAL_target_use_TBB )
-      CGAL_target_use_TBB(MultiCompMesher)
+  if(ACTIVATE_CONCURRENCY)
+    find_package(TBB QUIET)
+
+    if(TBB_FOUND)
+      include(CGAL_target_use_TBB)
+      cgal_target_use_tbb(MultiCompMesher)
       add_definitions(-DCGAL_CONCURRENT_MESH_3)
       message(STATUS "NOTICE: Concurrency enabled.")
 

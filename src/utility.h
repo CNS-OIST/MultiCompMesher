@@ -20,44 +20,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef MULTICOMPMESHER_UTILITY_H
 #define MULTICOMPMESHER_UTILITY_H
-#include <vector>
 #include <string>
+#include <vector>
 
 inline bool string_replace(std::string& str, const std::string& from, const std::string& to) {
     size_t start_pos = str.find(from);
-    if(start_pos == std::string::npos)
+    if (start_pos == std::string::npos)
         return false;
     str.replace(start_pos, from.length(), to);
     return true;
 }
 
-inline bool ends_with(std::string const & value, std::string const & ending)
-{
-    if (ending.size() > value.size()) return false;
+inline bool ends_with(std::string const& value, std::string const& ending) {
+    if (ending.size() > value.size())
+        return false;
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
 // https://thispointer.com/c-how-to-read-a-file-line-by-line-into-a-vector/
-inline bool getFileContent(std::string fileName, std::vector<std::string> & vecOfStrs)
-{
-	// Open the File
-	std::ifstream in(fileName.c_str());
- 
-	// Check if object is valid
-	if(!in)
-	{
-		std::cerr << "Cannot open the File : "<<fileName<<std::endl;
-		return false;
-	}
- 
-	std::string str;
-	while (std::getline(in, str))
-	{
-		if(str.size() > 0 && str.find("#") != 0) {
-			vecOfStrs.push_back(str);
-		}
-	}
-	in.close();
-	return true;
+inline bool getFileContent(std::string fileName, std::vector<std::string>& vecOfStrs) {
+    // Open the File
+    std::ifstream in(fileName.c_str());
+
+    // Check if object is valid
+    if (!in) {
+        std::cerr << "Cannot open the File : " << fileName << std::endl;
+        return false;
+    }
+
+    std::string str;
+    while (std::getline(in, str)) {
+        if (str.size() > 0 && str.find("#") != 0) {
+            vecOfStrs.push_back(str);
+        }
+    }
+    in.close();
+    return true;
 }
 #endif
