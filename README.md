@@ -10,7 +10,7 @@ desired component and the boundary meshes, then generates a tetrahedral mesh wit
 and the component signs.
 
 This program can not generate tetrahedral mesh from `.swc` morphology data commonly
-acquired from Light Microscopic (LM) imaging. For this purpose please visit [https://github.com/CNS-OIST/SWCMesher](https://github.com/CNS-OIST/SWCMesher).
+acquired from Light Microscopic (LM) imaging. For this purpose please visit [https://github.com/CNS-OIST/SWCTetMesher](https://github.com/CNS-OIST/SWCTetMesher).
 
 # Prerequisite
 * git
