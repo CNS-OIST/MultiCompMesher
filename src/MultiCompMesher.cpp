@@ -124,29 +124,29 @@ int main(int argc, char* argv[]) {
             po::bool_switch()->default_value(false),
             "Enable ODT mesh optimization")("odt-time",
                                             po::value<double>()->default_value(10.0),
-                                            "Time limit for ODT mesh optimization, in second")(
+                                            "Time limit for ODT mesh optimization, in seconds")(
             "lloyd",
             po::bool_switch()->default_value(false),
             "Enable Lloyd mesh optimization")("lloyd-time",
                                               po::value<double>()->default_value(10.0),
-                                              "Time limit for Lloyd mesh optimization, in second")(
+                                              "Time limit for Lloyd mesh optimization, in seconds")(
             "perturb",
             po::bool_switch()->default_value(false),
             "Enable mesh sliver perturbation")("perturb-time",
                                                po::value<double>()->default_value(10.0),
-                                               "Time limit for sliver perturbation, in second")(
+                                               "Time limit for sliver perturbation, in seconds")(
             "perturb-bound",
             po::value<double>()->default_value(0.0),
             "Targeted lower bound on dihedral angles of mesh cells for sliver perturbation, in "
-            "degree")("exude",
+            "degrees")("exude",
                       po::bool_switch()->default_value(false),
                       "Enable mesh sliver exudation")("exude-time",
                                                       po::value<double>()->default_value(10.0),
-                                                      "Time limit for sliver exudation, in second")(
+                                                      "Time limit for sliver exudation, in seconds")(
             "exude-bound",
             po::value<double>()->default_value(0.0),
             "Targeted lower bound on dihedral angles of mesh cells for sliver exudation, in "
-            "degree")("manifold",
+            "degrees")("manifold",
                       po::value<uint>()->default_value(0),
                       "Mainfold restriction of the outout mesh. (0) No restriction (1) Manifold "
                       "(2) Manifold with boundaries");
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
             } else {
                 output_file = vm["output"].as<std::string>() + std::string(".mesh");
             }
-            std::cout << "Mesh will write to: " << output_file << "\n\n";
+            std::cout << "Mesh will be written to: " << output_file << "\n\n";
         } else {
             std::cerr << "Output file name is required.\n";
             std::cerr << "Usage: ./MultiCompMesher boundary-file component-file output [options]\n";
@@ -305,7 +305,7 @@ int main(int argc, char* argv[]) {
         t.start();
 
         // Create domain
-        std::cout << "Create domain...\n";
+        std::cout << "Creating domain...\n";
         std::vector<std::unique_ptr<Submesh_domain>> domain_ptrs;
         Function_vector v;
         std::vector<Polyhedron> patches(nb_patches);
@@ -316,7 +316,7 @@ int main(int argc, char* argv[]) {
             std::ifstream input(boundary_files[i]);
             if (!(input >> patches[i])) {
                 std::cerr << "Error reading " << boundary_files[i]
-                          << " as a polyhedron, try to repair the mesh.\n";
+                          << " as a polyhedron, trying to repair the mesh.\n";
                 repair(boundary_files[i]);
                 restart_needed = true;
             }
