@@ -1,15 +1,15 @@
 # MultiCompMesher
 
-This program utilizes and extends the [CGAL 3D mesh generation functionality](https://doc.cgal.org/latest/Mesh_3/index.html) to
-generate element-labelled multi-component tetrahedral mesh.
+This program utilizes and extends [CGAL 3D mesh generation functionality](https://doc.cgal.org/latest/Mesh_3/index.html) to
+generate an element-labeled multi-component tetrahedral mesh.
 
 
 This program reads a list of watertight boundary surface meshes,
 and a sign file describing the spatial relationship between each 
-desired component and the boundary meshes, then generates a tetrahedral mesh with each component labelled separately according to the boundaries
+desired component and the boundary meshes, then generates a tetrahedral mesh with each component labeled separately according to the boundaries
 and the component signs.
 
-This program can not generate tetrahedral mesh from `.swc` morphology data commonly
+This program can not generate a tetrahedral mesh from `.swc` morphology data commonly
 acquired from Light Microscopic (LM) imaging. For this purpose please visit [https://github.com/CNS-OIST/SWCTetMesher](https://github.com/CNS-OIST/SWCTetMesher).
 
 # Prerequisite
@@ -30,7 +30,7 @@ make
 ```
 
 # Usage
-Below commands assume you are still in `MultiCompMesher/build`
+The commands below assume you are still in `MultiCompMesher/build`
     
 * Basic usage
     ```
@@ -38,20 +38,20 @@ Below commands assume you are still in `MultiCompMesher/build`
     ```
     * BOUNDARY-FILE: a plain text file where each line stores
     the path to a boundary surface mesh file (in `.off` format).  
-    All lines start with the `#` sign are considered as comments,
+    All lines starting with the `#` sign are considered as comments,
     and will be ignored by the program. Empty lines are also ignored.
 
     * COMPONENT-FILE: a plain text file where each line labels
     the relationship between each component and the boundaries
     using `+` (exclusive) or `-` (inclusive) signs.  
     For example,  assume that there are three boundaries, b1, b2 
-    and b3. A component labelled `-++` means the tetrahedrons of the 
+    and b3. A component labeled `-++` means the tetrahedrons of the 
     component should be in b1, and should not be in b2 and b3. 
     A component labelled `+--` means the tetrahedrons of the component 
     should not be in b1, but should be in both b2 and b3.  
-    The first component appears in the file will be labelled as component 1,
-    and the rest will be labelled by incremental order.  
-    All lines start with the `#` sign are considered as comments,
+    The first component appears in the file will be labeled as component 1,
+    and the rest will be labeled by incremental order.  
+    All lines starting with the `#` sign are considered as comments,
     and will be ignored by the program. Empty lines are also ignored.
 
     * OUTPUT: Path to the output mesh file. The output mesh is in .mesh
@@ -61,7 +61,7 @@ Below commands assume you are still in `MultiCompMesher/build`
 * Advance usage  
     * Mesh repairing
     
-        If there is problem with one of more boundary meshes, such as orientation issue, 
+        If there is problem with one or more boundary meshes, such as an orientation issue, 
         this program will try to repair the mesh and save
         the repaired version to another file. In this case, please change the
         corresponding file path in your `BOUNDARY-FILE` and rerun the program.
@@ -71,7 +71,7 @@ Below commands assume you are still in `MultiCompMesher/build`
         The `--size-field-file SIZING-FIELD-FILE` option accepts a `SIZING-FIELD-FILE` as input, 
         allowing individual configuration of patches and components over the global settings.
         This is particularly useful if the user wants to increase the fineness of a 
-        specific patch/component without dramatic increase of global element count.
+        specific patch/component without a dramatic increase of global element count.
 
         A `SIZING-FIELD-FILE` is a plain text file similar to [the example file](example/sizefields.txt)
 
@@ -85,7 +85,7 @@ Below commands assume you are still in `MultiCompMesher/build`
         Three types of inputs are accepted in the file:
         1. Comments and empty lines
             
-            Lines start with `#` are considered as comment and will be skipped in the process.
+            Lines starting with `#` are considered as comments and will be skipped in the process.
             Empty lines are also ignored.
 
         2. Patch setting
@@ -93,7 +93,7 @@ Below commands assume you are still in `MultiCompMesher/build`
             ```
             patch COMPONENT-ID1 COMPONENT-ID2 PATCH-FC-SIZE PATCH-FC-DISTANCE
             ``` 
-            The `COMPONENT-ID` is the appearing order of components in the `COMPONENT-FILE`,
+            The `COMPONENT-ID` is the order of appearance of components in the `COMPONENT-FILE`,
             note that 0 is the `COMPONENT-ID` for outer space, so `patch 0 1` defines the
             patch of surface boundary formed by component 1.
 
@@ -105,7 +105,7 @@ Below commands assume you are still in `MultiCompMesher/build`
             ```
             component COMPONENT-ID COMPONENT-CC-SIZE
             ``` 
-            The `COMPONENT-ID` is the appearing order of components in the `COMPONENT-FILE`,
+            The `COMPONENT-ID` is the order of appearance of components in the `COMPONENT-FILE`,
             note that 0 is the `COMPONENT-ID` for outer space, so `COMPONENT-ID` should always
             be positive.
 
@@ -124,7 +124,7 @@ The usage of these parameters can be found in the
     
 If [Intel's TBB library](https://software.intel.com/en-us/tbb) is installed and found, 
 the program will try to use [concurrency mode](https://github.com/CGAL/cgal/wiki/Concurrency-in-CGAL) 
-for meshing. User can disable it and uses sequential mode instead by setting the `ACTIVATE_CONCURRENCY` flag in compilation
+for meshing. Users can disable it and uses sequential mode instead by setting the `ACTIVATE_CONCURRENCY` flag during compilation
 
 ```
 cmake -DACTIVATE_CONCURRENCY=OFF ..
@@ -132,11 +132,11 @@ cmake -DACTIVATE_CONCURRENCY=OFF ..
 
 # Example
 
-This example generates a mesh modelling a dendritic spine, with three
-labelled components, the spine cytosol (excluding other two components), 
+This example generates a mesh modeling a dendritic spine, with three
+labeled components, the spine cytosol (excluding the other two components), 
 the Endoplasmic Reticulum (ER), and the Postsynaptic Density (PSD) region.
 
-The [boundary file](example/boundaries.txt) stores the path to three
+The [boundary file](example/boundaries.txt) stores the path to the three
 boundary surfaces.  
 1. [spine boundary](example/Spine.off)
 2. [ER boundary](example/ER.off)
@@ -149,17 +149,17 @@ The [component file](example/components.txt) defines three components.
 
 The command to generate the mesh is
 ```
-# assume still in MultiCompMesher/build
+# assumed still in MultiCompMesher/build
 
 ./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/output --fc-size 0.01 --fc-distance 0.001 --cc-size 0.05 --odt --lloyd --perturb --exude
 ```
 The mesh is written to [output.mesh](example/output.mesh), then visualized
-in Gmsh. Note that each component are labelled and colored individually. To use the mesh in [STEPS](http://steps.sourceforge.net), the user need to
+in Gmsh. Note that each component is labeled and colored individually. To use the mesh in [STEPS](http://steps.sourceforge.net), the user needs to
 export it to the Abaqus inp format or the Gmsh 2.0 ASCii format in Gmsh.
 ![Mesh visualization in Gmsh](example/mesh_view.png)
 
 Using [these sizing settings](example/sizefields.txt), we can decrease the global resolution but increase the
-resolution of the ER membrane, as well as the PSD region component, resulting a gemoetry-adapted mesh.
+resolution of the ER membrane, as well as the PSD region component, resulting in a geometry-adapted mesh.
 ```
 ./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/sizing-output --fc-size 0.1 --fc-distance 0.01 --cc-size 0.1 --odt --lloyd --perturb --exude --size-field-file ../example/sizefields.txt 
 ```
