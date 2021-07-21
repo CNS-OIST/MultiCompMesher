@@ -40,8 +40,8 @@ if(CGAL_FOUND)
     find_package(TBB QUIET)
 
     if(TBB_FOUND)
-      include(CGAL_target_use_TBB)
-      cgal_target_use_tbb(MultiCompMesher)
+      include(CGAL_TBB_support)
+      target_link_libraries(MultiCompMesher PRIVATE CGAL::TBB_support)
       add_definitions(-DCGAL_CONCURRENT_MESH_3)
       message(STATUS "NOTICE: Concurrency enabled.")
 

@@ -28,8 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h>
 
-#include <CGAL/IO/OFF_reader.h>
-
+#include <CGAL/IO/OFF.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -45,7 +44,7 @@ int repair(std::string& filename) {
     std::vector<K::Point_3> points;
     std::vector<std::vector<std::size_t>> polygons;
 
-    if (!input || !CGAL::read_OFF(input, points, polygons) || points.empty()) {
+    if (!input || !CGAL::IO::read_OFF(input, points, polygons) || points.empty()) {
         std::cerr << "Cannot open file " << filename << std::endl;
         return EXIT_FAILURE;
     }
