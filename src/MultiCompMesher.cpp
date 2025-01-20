@@ -96,6 +96,35 @@ static inline FT func(const Point& p, const Submesh_domain& d) {
     }
 }
 
+class labeling_function: public CGAL::cpp98::unary_function<K::Point_3, int> {
+  public:
+    labeling_function(Function_vector v, std::vector<std::string> vps): _v(v), _vps(vps) {}
+    int operator()(K::Point_3 p) const {
+      for (unsigned int i = 0; i < _vps.size(); ++i) {
+        bool ok=true;
+        for (unsigned int j = 0 ; j < _vps[i].size(); ++j) {
+          // TODO: cache values
+          if (_vps[i][j] == '_') {
+            continue;
+          } else if (_vps[i][j] == '+' and _v[j](p) <= 0) {
+            ok = false;
+            break;
+          } else if (_vps[i][j] == '-' and _v[j](p) >= 0) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) {
+          return i + 1;
+        }
+      }
+      return 0;
+    }
+  private:
+    Function_vector _v;
+    std::vector<std::string> _vps;
+};
+
 int main(int argc, char* argv[]) {
 #ifdef CGAL_CONCURRENT_MESH_3
     std::cout << "Running in concurrency mode.\n";
@@ -340,21 +369,29 @@ int main(int argc, char* argv[]) {
         const std::size_t n_components = domain_signs.size();
         std::vector<std::string> vps;
 
+        bool has_ignore_sign{false};
         for (std::size_t i = 0; i < n_components; ++i) {
             int n_pos_signs = std::count(domain_signs[i].begin(), domain_signs[i].end(), '+');
             int n_neg_signs = std::count(domain_signs[i].begin(), domain_signs[i].end(), '-');
-            if (n_pos_signs + n_neg_signs != nb_patches) {
+            int n_ign_signs = std::count(domain_signs[i].begin(), domain_signs[i].end(), '_');
+            if (n_pos_signs + n_neg_signs + n_ign_signs != nb_patches) {
                 std::cerr << "Component signs should contain only + and -.\n";
                 std::cerr << "The number of signs of each component should be the same as the "
                              "number of boundary meshes.\n";
                 return EXIT_FAILURE;
+            }
+            if (n_ign_signs > 0) {
+              has_ignore_sign = true;
             }
             vps.push_back(domain_signs[i]);
         }
 
         std::cout << "Meshing...\n";
         namespace param = CGAL::parameters;
-        Mesh_domain domain(param::function = Function_wrapper(v, vps),
+        // Mesh_domain domain(param::function = Function_wrapper(v, vps),
+        //                    param::bounding_object = bounding_box,
+        //                    param::relative_error_bound = 1e-6);
+        Mesh_domain domain(param::function = labeling_function(v, vps),
                            param::bounding_object = bounding_box,
                            param::relative_error_bound = 1e-6);
 
