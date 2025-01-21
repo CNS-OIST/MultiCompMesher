@@ -43,16 +43,18 @@ The commands below assume you are still in `MultiCompMesher/build`
 
     * COMPONENT-FILE: a plain text file where each line labels
     the relationship between each component and the boundaries
-    using `+` (exclusive) or `-` (inclusive) signs.  
+    using `+` (exclusive), `-` (inclusive) or `*` (ignored) signs.  
     For example,  assume that there are three boundaries, b1, b2 
     and b3. A component labeled `-++` means the tetrahedrons of the 
     component should be in b1, and should not be in b2 and b3. 
-    A component labelled `+--` means the tetrahedrons of the component 
-    should not be in b1, but should be in both b2 and b3.  
-    The first component appears in the file will be labeled as component 1,
-    and the rest will be labeled by incremental order.  
-    All lines starting with the `#` sign are considered as comments,
-    and will be ignored by the program. Empty lines are also ignored.
+    A component labelled `+-*` means the tetrahedrons of the component 
+    should not be in b1, should be in b2 and b3 is ignored (it could either
+    be in or out of b3). The first component appears in the file will be
+    labeled as component 1, and the rest will be labeled by incremental
+    order. When a point could be in several components, it is attributed
+    to the component with lowest identifier. All lines starting with the
+    `#` sign are considered as comments, and will be ignored by the
+    program. Empty lines are also ignored.
 
     * OUTPUT: Path to the output mesh file. The output mesh is in .mesh
     format, which can be opened and converted to other formats in 
