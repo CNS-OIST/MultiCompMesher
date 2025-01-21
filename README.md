@@ -43,11 +43,11 @@ The commands below assume you are still in `MultiCompMesher/build`
 
     * COMPONENT-FILE: a plain text file where each line labels
     the relationship between each component and the boundaries
-    using `+` (exclusive), `-` (inclusive) or `_` (ignored) signs.  
+    using `+` (exclusive), `-` (inclusive) or `*` (ignored) signs.  
     For example,  assume that there are three boundaries, b1, b2 
     and b3. A component labeled `-++` means the tetrahedrons of the 
     component should be in b1, and should not be in b2 and b3. 
-    A component labelled `+-_` means the tetrahedrons of the component 
+    A component labelled `+-*` means the tetrahedrons of the component 
     should not be in b1, should be in b2 and b3 is ignored (it could either
     be in or out of b3). The first component appears in the file will be
     labeled as component 1, and the rest will be labeled by incremental

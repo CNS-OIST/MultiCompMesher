@@ -105,7 +105,7 @@ public:
     for (unsigned int i = 0; i < _vps.size(); ++i) {
       bool ok = true;
       for (unsigned int j = 0; j < _vps[i].size(); ++j) {
-        if (_vps[i][j] == '_') {
+        if (_vps[i][j] == '*') {
           continue;
         } else if (_vps[i][j] == '+' and _v[j](p) <= 0) {
           ok = false;
@@ -396,7 +396,7 @@ int main(int argc, char *argv[]) {
       int n_neg_signs =
           std::count(domain_signs[i].begin(), domain_signs[i].end(), '-');
       int n_ign_signs =
-          std::count(domain_signs[i].begin(), domain_signs[i].end(), '_');
+          std::count(domain_signs[i].begin(), domain_signs[i].end(), '*');
       if (n_pos_signs + n_neg_signs + n_ign_signs != nb_patches) {
         std::cerr << "Component signs should contain only + and -.\n";
         std::cerr << "The number of signs of each component should be the same "
