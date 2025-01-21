@@ -103,7 +103,6 @@ class labeling_function: public CGAL::cpp98::unary_function<K::Point_3, int> {
       for (unsigned int i = 0; i < _vps.size(); ++i) {
         bool ok=true;
         for (unsigned int j = 0 ; j < _vps[i].size(); ++j) {
-          // TODO: cache values
           if (_vps[i][j] == '_') {
             continue;
           } else if (_vps[i][j] == '+' and _v[j](p) <= 0) {
@@ -143,6 +142,7 @@ int main(int argc, char* argv[]) {
             "size-field-file", po::value<std::string>(), "Special size field setting file.")(
             "fc-angle", po::value<double>()->default_value(25.0), "Facet criteria - Angle")(
             "fc-size", po::value<double>()->default_value(25.0), "Facet criteria - Size")(
+            "fc-minsize", po::value<double>()->default_value(5.0), "Facet criteria - Minimum size")(
             "fc-distance", po::value<double>()->default_value(5.0), "Facet criteria - Distance")(
             "cc-ratio",
             po::value<double>()->default_value(2.0),
@@ -388,9 +388,6 @@ int main(int argc, char* argv[]) {
 
         std::cout << "Meshing...\n";
         namespace param = CGAL::parameters;
-        // Mesh_domain domain(param::function = Function_wrapper(v, vps),
-        //                    param::bounding_object = bounding_box,
-        //                    param::relative_error_bound = 1e-6);
         Mesh_domain domain(param::function = labeling_function(v, vps),
                            param::bounding_object = bounding_box,
                            param::relative_error_bound = 1e-6);
@@ -411,12 +408,18 @@ int main(int argc, char* argv[]) {
         }
 
         // Set mesh criteria
-        Facet_criteria facet_criteria(vm["fc-angle"].as<double>(), fc_size_field, fc_length_field);
+        Facet_criteria facet_criteria(
+            vm["fc-angle"].as<double>(), fc_size_field, fc_length_field,
+            CGAL::FACET_VERTICES_ON_SURFACE, vm["fc-minsize"].as<double>()
+        );
         Cell_criteria cell_criteria(vm["cc-ratio"].as<double>(), cc_size_field);
         Mesh_criteria criteria(facet_criteria, cell_criteria);
         // Mesh generation
 
-        CGAL::parameters::internal::Manifold_options mo;
+        CGAL::Named_function_parameters<
+          ::CGAL::parameters::internal::Manifold_options,
+          ::CGAL::internal_np::manifold_param_t,
+          CGAL::internal_np::No_property> mo;
         switch (vm["manifold"].as<uint>()) {
         case 0:
             mo = CGAL::parameters::non_manifold();
