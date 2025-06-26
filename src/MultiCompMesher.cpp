@@ -148,6 +148,8 @@ int main(int argc, char *argv[]) {
         "output,o", po::value<std::string>(),
         "Output mesh file")("size-field-file", po::value<std::string>(),
                             "Special size field setting file.")(
+        "no-intersect-check", po::bool_switch()->default_value(false),
+        "Skip check of boundary mesh intersections")(
         "fc-angle", po::value<double>()->default_value(25.0),
         "Facet criteria - Angle")("fc-size",
                                   po::value<double>()->default_value(25.0),
@@ -385,20 +387,24 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
 
-    std::cout << "Detecting intersection...";
-    std::vector<std::pair<size_t, size_t> > intersecting_report;
-    PMP::intersecting_meshes(surface_meshes, std::back_inserter(intersecting_report));
-    if (intersecting_report.size() != 0) {
-      std::cout << "Detected\n";
-      for(auto it = intersecting_report.begin(); it != intersecting_report.end(); it++) {
-        auto intersect_pair = *it;
-        std::cerr << boundary_files[intersect_pair.first] << " intersects " << boundary_files[intersect_pair.second] << std::endl;
+    if (!vm["no-intersect-check"].as<bool>())
+    {
+      std::cout << "Detecting intersection...";
+      std::vector<std::pair<size_t, size_t> > intersecting_report;
+      PMP::intersecting_meshes(surface_meshes, std::back_inserter(intersecting_report));
+      if (intersecting_report.size() != 0) {
+        std::cout << "Detected\n";
+        for(auto it = intersecting_report.begin(); it != intersecting_report.end(); it++) {
+          auto intersect_pair = *it;
+          std::cerr << boundary_files[intersect_pair.first] << " intersects " << boundary_files[intersect_pair.second] << std::endl;
+        }
+        std::cerr << "\nPlease relocate your meshes so that they do not intersect each other.\n";
+        std::cerr << "To skip the check for intersections, add --no-intersect-check to the command.\n\n";
+        return EXIT_FAILURE;
       }
-      std::cerr << "\nPlease relocate your meshes so that they do not intersect each other.\n\n";
-      return EXIT_FAILURE;
-    }
-    else {
-      std::cout << "No intersection found\n\n";
+      else {
+        std::cout << "No intersection found\n\n";
+      }
     }
 
     // Create domain
