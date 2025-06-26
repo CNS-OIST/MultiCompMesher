@@ -19,11 +19,11 @@ find_package(
 option(ACTIVATE_CONCURRENCY "Enable concurrency" ON)
 
 if(CGAL_FOUND)
-  if(CGAL_MAJOR_VERSION LESS 5)
-    message(SEND_ERROR "CGAL ${CGAL_VERSION} was found but version 5 or higher is required.")
+  if(CGAL_MAJOR_VERSION LESS 6)
+    message(SEND_ERROR "CGAL ${CGAL_VERSION} was found but version 6 or higher is required.")
   endif()
-  include(${CGAL_USE_FILE})
   create_single_source_cgal_program("src/MultiCompMesher.cpp")
+  target_link_libraries("MultiCompMesher" PRIVATE CGAL::CGAL)
   find_package(
     Boost
     COMPONENTS program_options
