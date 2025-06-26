@@ -27,9 +27,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Polyhedral_mesh_domain_3.h>
 #include <CGAL/Polyhedron_3.h>
+#include <CGAL/Surface_mesh.h>
 #include <CGAL/Timer.h>
 #include <CGAL/boost/graph/helpers.h>
 #include <CGAL/make_mesh_3.h>
+#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
+#include <CGAL/Polygon_mesh_processing/intersection.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 
@@ -40,6 +43,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <tuple>
 #include <vector>
+#include <sstream>
 
 #include "mesh_repair.h"
 #include "utility.h"
@@ -49,6 +53,7 @@ namespace po = boost::program_options;
 // Domain
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::Point_3 Point;
+typedef CGAL::Surface_mesh<K::Point_3> Surface_mesh;
 typedef K::FT FT;
 typedef CGAL::Polyhedron_3<K> Polyhedron;
 typedef CGAL::Polyhedral_mesh_domain_3<Polyhedron, K> Submesh_domain;
@@ -73,6 +78,7 @@ typedef CGAL::Mesh_constant_domain_field_3<Mesh_domain::R, Mesh_domain::Index>
 
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
+namespace PMP = CGAL::Polygon_mesh_processing;
 
 template <typename FT, typename P>
 class FT_to_point_function_wrapper : public CGAL::cpp98::unary_function<P, FT> {
@@ -350,12 +356,8 @@ int main(int argc, char *argv[]) {
     CGAL::Timer t;
     t.start();
 
-    // Create domain
-    std::cout << "Creating domain...\n";
-    std::vector<std::unique_ptr<Submesh_domain>> domain_ptrs;
-    Function_vector v;
     std::vector<Polyhedron> patches(nb_patches);
-    CGAL::Bbox_3 bounding_box;
+    std::vector<Surface_mesh> surface_meshes(nb_patches);
     bool restart_needed = false;
 
     for (std::size_t i = 0; i < nb_patches; ++i) {
@@ -366,9 +368,46 @@ int main(int argc, char *argv[]) {
         repair(boundary_files[i]);
         restart_needed = true;
       }
-      if (restart_needed) {
-        continue;
+        
+      if(!PMP::IO::read_polygon_mesh(boundary_files[i], surface_meshes[i]) || !CGAL::is_triangle_mesh(surface_meshes[i]))
+      {
+        std::cerr << "Error reading " << boundary_files[i]
+                  << " as triangle mesh.\n";
+        restart_needed = true;
       }
+    }
+
+    if (restart_needed) {
+      std::cerr << "Some boundary meshes have been repaired, please update the "
+                   "boundary file "
+                   "list in "
+                << vm["boundary-file"].as<std::string>() << ".\n";
+      return EXIT_FAILURE;
+    }
+
+    std::cout << "Detecting intersection...";
+    std::vector<std::pair<size_t, size_t> > intersecting_report;
+    PMP::intersecting_meshes(surface_meshes, std::back_inserter(intersecting_report));
+    if (intersecting_report.size() != 0) {
+      std::cout << "Detected\n";
+      for(auto it = intersecting_report.begin(); it != intersecting_report.end(); it++) {
+        auto intersect_pair = *it;
+        std::cerr << boundary_files[intersect_pair.first] << " intersects " << boundary_files[intersect_pair.second] << std::endl;
+      }
+      std::cerr << "\nPlease relocate your meshes so that they do not intersect each other.\n\n";
+      return EXIT_FAILURE;
+    }
+    else {
+      std::cout << "No intersection found\n\n";
+    }
+
+    // Create domain
+    std::cout << "Creating domain...\n";
+    std::vector<std::unique_ptr<Submesh_domain>> domain_ptrs;
+    Function_vector v;
+    CGAL::Bbox_3 bounding_box;
+
+    for (std::size_t i = 0; i < nb_patches; ++i) {
       domain_ptrs.emplace_back(new Submesh_domain(patches[i]));
       const auto &domain = *domain_ptrs.back();
       bounding_box += domain.bbox();
@@ -377,13 +416,6 @@ int main(int argc, char *argv[]) {
       };
       Function f(func1);
       v.push_back(f);
-    }
-    if (restart_needed) {
-      std::cerr << "Some boundary meshes have been repaired, please update the "
-                   "boundary file "
-                   "list in "
-                << vm["boundary-file"].as<std::string>() << ".\n";
-      return EXIT_FAILURE;
     }
 
     const std::size_t n_components = domain_signs.size();
