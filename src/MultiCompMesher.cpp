@@ -523,7 +523,7 @@ int main(int argc, char *argv[]) {
       std::ofstream medit_file(output_file);
       CGAL::output_to_medit(medit_file, c3t3);
     }
-
+    t.stop();
     std::cout << "Mesh has been written to " << output_file
               << "\nTime cost: " << t.time() << " sec.\n";
 
