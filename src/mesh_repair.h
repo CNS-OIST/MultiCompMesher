@@ -1,6 +1,6 @@
 /*
 Multi-Component Mesh Generator
-Copyright (C) 2020 Okinawa Institute of Science and Technology, Japan.
+Copyright (C) 2025 Okinawa Institute of Science and Technology, Japan.
 
 Developer: Weiliang Chen
 
@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/* This file is deprecated 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/Polyhedron_3.h>
@@ -27,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 
 #include <CGAL/IO/OFF.h>
 #include <iostream>
@@ -57,13 +59,19 @@ int repair(std::string& filename) {
     // Number the faces because 'orient_to_bound_a_volume' needs a face <--> index map
     int index = 0;
     for (PolyhedronWithID::Face_iterator fb = mesh.facets_begin(), fe = mesh.facets_end(); fb != fe;
-         ++fb)
+         ++fb) {
         fb->id() = index++;
+    }
 
-    if (CGAL::is_closed(mesh))
+    if (CGAL::is_closed(mesh)) {
         CGAL::Polygon_mesh_processing::orient_to_bound_a_volume(mesh);
+    }
 
-    string_replace(filename, ".off", "_repaired.off");
+    if (!CGAL::is_triangle_mesh(mesh)) {
+        CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
+    }
+
+    append_str_before_suffix(filename, "_repaired");
     std::ofstream out(filename);
     out.precision(17);
     if (!(out << mesh)) {
@@ -73,3 +81,5 @@ int repair(std::string& filename) {
     std::cout << "Repaired mesh data has been written to " << filename << ".\n";
     return EXIT_SUCCESS;
 }
+
+*/
