@@ -37,7 +37,7 @@ The commands below assume you are still in `MultiCompMesher/build`
     ./MultiCompMesher BOUNDARY-FILE COMPONENT-FILE OUTPUT
     ```
     * BOUNDARY-FILE: a plain text file where each line stores
-    the path to a boundary surface mesh file (in `.off` format).  
+    the path to a boundary surface mesh file (in `.off|.obj|.stl|.ply|.ts|.vtp` format).  
     All lines starting with the `#` sign are considered as comments,
     and will be ignored by the program. Empty lines are also ignored.
 

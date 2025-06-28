@@ -1,8 +1,8 @@
 /*
 Multi-Component Mesh Generator
-Copyright (C) 2020 Okinawa Institute of Science and Technology, Japan.
+Copyright (C) 2025 Okinawa Institute of Science and Technology, Japan.
 
-Developer: Weiliang Chen
+Developer: Weiliang Chen & Jules Lallouette
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
 #include <CGAL/Polygon_mesh_processing/intersection.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 
@@ -45,7 +46,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include <sstream>
 
-#include "mesh_repair.h"
 #include "utility.h"
 
 namespace po = boost::program_options;
@@ -56,7 +56,7 @@ typedef K::Point_3 Point;
 typedef CGAL::Surface_mesh<K::Point_3> Surface_mesh;
 typedef K::FT FT;
 typedef CGAL::Polyhedron_3<K> Polyhedron;
-typedef CGAL::Polyhedral_mesh_domain_3<Polyhedron, K> Submesh_domain;
+typedef CGAL::Polyhedral_mesh_domain_3<Surface_mesh, K> Submesh_domain;
 typedef CGAL::Labeled_mesh_domain_3<K> Mesh_domain;
 
 #ifdef CGAL_CONCURRENT_MESH_3
@@ -354,37 +354,39 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
       }
     }
-
+  
     CGAL::Timer t;
     t.start();
 
-    std::vector<Polyhedron> patches(nb_patches);
     std::vector<Surface_mesh> surface_meshes(nb_patches);
-    bool restart_needed = false;
 
     for (std::size_t i = 0; i < nb_patches; ++i) {
-      std::ifstream input(boundary_files[i]);
-      if (!(input >> patches[i])) {
-        std::cerr << "Error reading " << boundary_files[i]
-                  << " as a polyhedron, trying to repair the mesh.\n";
-        repair(boundary_files[i]);
-        restart_needed = true;
+      bool mesh_repaired = false;
+      if(!CGAL::IO::read_polygon_mesh(boundary_files[i], surface_meshes[i])) {
+        std::cout << "Error reading " << boundary_files[i]
+                  << " as a polygon mesh, trying to invoke repair and orientation step...";
+        if(PMP::IO::read_polygon_mesh(boundary_files[i], surface_meshes[i])) {
+          std::cout << "Success.\n";
+          mesh_repaired = true;
+        }
+        else {
+          std::cout << "Fail.\n";
+          std::cerr << "Exiting due to mesh loading issue, please check your meshes.\n";
+          return EXIT_FAILURE;
+        }
       }
-        
-      if(!PMP::IO::read_polygon_mesh(boundary_files[i], surface_meshes[i]) || !CGAL::is_triangle_mesh(surface_meshes[i]))
-      {
-        std::cerr << "Error reading " << boundary_files[i]
-                  << " as triangle mesh.\n";
-        restart_needed = true;
+      if(!CGAL::is_triangle_mesh(surface_meshes[i])) {
+        std::cout << "Triangulating the mesh...\n";
+        CGAL::Polygon_mesh_processing::triangulate_faces(surface_meshes[i]);
+        std::cout << "Done.\n";
+        mesh_repaired = true;
       }
-    }
-
-    if (restart_needed) {
-      std::cerr << "Some boundary meshes have been repaired, please update the "
-                   "boundary file "
-                   "list in "
-                << vm["boundary-file"].as<std::string>() << ".\n";
-      return EXIT_FAILURE;
+      if (mesh_repaired) {
+        std::string repaired_filename(boundary_files[i]);
+        append_str_before_suffix(repaired_filename, "_repaired");
+        CGAL::IO::write_polygon_mesh(repaired_filename, surface_meshes[i]);
+        std::cout << "Repaired mesh has been saved to " << repaired_filename << ".\n";
+      }
     }
 
     if (!vm["no-intersect-check"].as<bool>())
@@ -414,7 +416,7 @@ int main(int argc, char *argv[]) {
     CGAL::Bbox_3 bounding_box;
 
     for (std::size_t i = 0; i < nb_patches; ++i) {
-      domain_ptrs.emplace_back(new Submesh_domain(patches[i]));
+      domain_ptrs.emplace_back(new Submesh_domain(surface_meshes[i]));
       const auto &domain = *domain_ptrs.back();
       bounding_box += domain.bbox();
       std::function<FT(Point)> func1 = [&domain](Point p) {
