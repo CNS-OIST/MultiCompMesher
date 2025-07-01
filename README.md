@@ -118,7 +118,16 @@ The commands below assume you are still in `MultiCompMesher/build`
 
             `COMPONENT-CC-SIZE` is the `cc-size` configuration specific to this component.
     
-    * <a name="Mainifoldness">Mainifoldness</a>
+    * Mainifoldness
+
+        This program supports three manifoldness settings in mesh generation,
+        which can be speficified by one of the following options:
+        
+        1.  `--manifold 0`: Apply the [Non manifold](https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Parameters.html#ga910ada4d26130095019315acae35e601) option in CGAL.
+        
+        2. `--manifold 1`: Apply the [Manifold](https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Parameters.html#ga666e751a1518b97a63ff2d0e01a1008b) option in CGAL.
+        
+        3. `--manifold 2`: Apply the [Manifold with boundary](https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Parameters.html#ga6392d76fc574edf9de766c6806f0741c) option in CGAL.
 
 
 
