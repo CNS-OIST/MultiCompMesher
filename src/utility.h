@@ -1,8 +1,8 @@
 /*
 Multi-Component Mesh Generator
-Copyright (C) 2020 Okinawa Institute of Science and Technology, Japan.
+Copyright (C) 2025 Okinawa Institute of Science and Technology, Japan.
 
-Developer: Weiliang Chen
+Developer: Weiliang Chen  & Jules Lallouette
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,11 +23,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-inline bool string_replace(std::string& str, const std::string& from, const std::string& to) {
-    size_t start_pos = str.find(from);
+inline bool append_str_before_suffix(std::string& str, const std::string& append_str) {
+    size_t start_pos = str.rfind(".");
     if (start_pos == std::string::npos)
         return false;
-    str.replace(start_pos, from.length(), to);
+    str.insert(start_pos, append_str);
     return true;
 }
 

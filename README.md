@@ -37,7 +37,7 @@ The commands below assume you are still in `MultiCompMesher/build`
     ./MultiCompMesher BOUNDARY-FILE COMPONENT-FILE OUTPUT
     ```
     * BOUNDARY-FILE: a plain text file where each line stores
-    the path to a boundary surface mesh file (in `.off` format).  
+    the path to a boundary surface mesh file (in `.off|.obj|.stl|.ply|.ts|.vtp` format).  
     All lines starting with the `#` sign are considered as comments,
     and will be ignored by the program. Empty lines are also ignored.
 
@@ -63,10 +63,15 @@ The commands below assume you are still in `MultiCompMesher/build`
 * Advance usage  
     * Mesh repairing
     
-        If there is problem with one or more boundary meshes, such as an orientation issue, 
-        this program will try to repair the mesh and save
-        the repaired version to another file. In this case, please change the
-        corresponding file path in your `BOUNDARY-FILE` and rerun the program.
+        If there is problem with one or more boundary meshes, such as orientation issue, 
+        this program will try to repair the mesh and save the repaired version to another file. 
+        The program will then use the repaired mesh in later steps to generate the tetrahedral mesh.
+
+    * Mesh intersection detection
+
+        The program will automatically detect any intersection between mesh boundaries, and will raise
+        an error if intersection is found. This is required for maintaining manifoldness of the generated
+        mesh (`--manifold 1` and `--manifold 2`, see Mainifoldness below). To skip the detection and continue the program as it is, add `--no-intersect-check` to the command.
 
     * Individual patch/component sizing control
 
@@ -113,6 +118,19 @@ The commands below assume you are still in `MultiCompMesher/build`
 
             `COMPONENT-CC-SIZE` is the `cc-size` configuration specific to this component.
     
+    * Mainifoldness
+
+        This program supports three manifoldness settings in mesh generation,
+        which can be speficified by one of the following options:
+        
+        1.  `--manifold 0`: Apply the [Non manifold](https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Parameters.html#ga910ada4d26130095019315acae35e601) option in CGAL.
+        
+        2. `--manifold 1`: Apply the [Manifold](https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Parameters.html#ga666e751a1518b97a63ff2d0e01a1008b) option in CGAL.
+        
+        3. `--manifold 2`: Apply the [Manifold with boundary](https://doc.cgal.org/latest/Mesh_3/group__PkgMesh3Parameters.html#ga6392d76fc574edf9de766c6806f0741c) option in CGAL.
+
+
+
 Other parameters can be set to control the meshing process and optimize the mesh quality. 
 You can list them using
 

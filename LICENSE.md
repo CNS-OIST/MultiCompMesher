@@ -1,8 +1,8 @@
 Multi-Component Mesh Generator
 
-Copyright (C) 2020 Okinawa Institute of Science and Technology, Japan.
+Copyright (C) 2025 Okinawa Institute of Science and Technology, Japan.
 
-Developer: Weiliang Chen
+Developer: Weiliang Chen & Jules Lallouette
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
