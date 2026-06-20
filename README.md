@@ -87,9 +87,11 @@ The commands below assume you are still in `MultiCompMesher/build`
         patch 1 3 0.005 0.0001
         # component 2 (PSD)
         component 2 0.005
+        # local refinement shell across a thin gap at (0.1, 0.2, 0.3)
+        sphere 0.1 0.2 0.3 0 0.01 0.002
         ```
 
-        Three types of inputs are accepted in the file:
+        Four types of inputs are accepted in the file:
         1. Comments and empty lines
             
             Lines starting with `#` are considered as comments and will be skipped in the process.
@@ -117,6 +119,26 @@ The commands below assume you are still in `MultiCompMesher/build`
             be positive.
 
             `COMPONENT-CC-SIZE` is the `cc-size` configuration specific to this component.
+
+        4. Sphere setting (local refinement shell)
+
+            ```
+            sphere CX CY CZ INNER OUTER SIZE
+            ```
+            Refines cells and facets whose location falls within the spherical
+            **shell** centred at `(CX, CY, CZ)` between radii `INNER` and `OUTER`
+            down to `SIZE` (the smaller of the local and global size wins). Set
+            `INNER` to 0 for a solid ball.
+
+            Unlike `patch`/`component`, which key off component identity, a sphere
+            is purely geometric, so it refines wherever it overlaps regardless of
+            which compartments are nearby. This is intended for resolving **thin
+            gaps between compartments**: a shell straddling a body's surface refines
+            the cytosol layer in the gap (so close compartments don't collapse into
+            contact) without refining the body's whole interior — many small spheres
+            along a contact cost far fewer elements than refining an entire patch.
+            Facet distance inside a sphere is scaled to a quarter of `SIZE` so the
+            refined facets hug the surface tightly.
     
     * Mainifoldness
 
