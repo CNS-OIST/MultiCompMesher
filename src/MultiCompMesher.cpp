@@ -76,6 +76,46 @@ typedef Mesh_criteria::Cell_criteria Cell_criteria;
 typedef CGAL::Mesh_constant_domain_field_3<Mesh_domain::R, Mesh_domain::Index>
     Sizing_field;
 
+// A local refinement region: a spherical SHELL about `center`. Cells/facets whose
+// query point lies between `inner` and `outer` radius are sized down to `size`. Using
+// a shell (not a solid ball) refines the thin gap that straddles a body's surface
+// without refining its whole interior.
+struct Refine_sphere {
+  K::Point_3 center;
+  double inner_sq;
+  double outer_sq;
+  double size;
+};
+
+// Spatial sizing field: the per-label constant field, locally overridden (taking the
+// minimum) inside any Refine_sphere shell. Lets the mesher refine ONLY near thin
+// inter-compartment gaps instead of refining a whole boundary patch globally.
+// Models MeshDomainField_3 (operator()(point, dimension, index)).
+struct Spatial_sizing_field {
+  typedef K::FT FT;
+  typedef K::Point_3 Point_3;
+  typedef Mesh_domain::Index Index;
+  Sizing_field base;
+  std::vector<Refine_sphere> spheres;
+  double size_scale;   // applied to each sphere's size (e.g. 0.25 for facet distance)
+
+  FT operator()(const Point_3 &p, const int dim, const Index &index) const {
+    FT s = base(p, dim, index);
+    for (const Refine_sphere &sp : spheres) {
+      const double dx = p.x() - sp.center.x();
+      const double dy = p.y() - sp.center.y();
+      const double dz = p.z() - sp.center.z();
+      const double d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 >= sp.inner_sq && d2 <= sp.outer_sq) {
+        const FT local = sp.size * size_scale;
+        if (local < s)
+          s = local;
+      }
+    }
+    return s;
+  }
+};
+
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
 namespace PMP = CGAL::Polygon_mesh_processing;
@@ -286,6 +326,7 @@ int main(int argc, char *argv[]) {
     std::map<std::pair<int, int>, double> fc_size_field_map;
     std::map<std::pair<int, int>, double> fc_length_field_map;
     std::map<int, double> cc_size_field_map;
+    std::vector<Refine_sphere> refine_spheres;
 
     if (vm.count("size-field-file")) {
       std::vector<std::string> size_field_settings;
@@ -331,6 +372,19 @@ int main(int argc, char *argv[]) {
             cc_size_field_map[comp] = component_size_field;
             std::cout << "Setting size field for component " << comp << ": "
                       << component_size_field << "\n\n";
+          } else if (fields[0] == "sphere" && fields.size() == 7) {
+            // sphere CX CY CZ INNER OUTER SIZE -> local refinement shell
+            double cx = std::stod(fields[1]);
+            double cy = std::stod(fields[2]);
+            double cz = std::stod(fields[3]);
+            double inner = std::stod(fields[4]);
+            double outer = std::stod(fields[5]);
+            double size = std::stod(fields[6]);
+            refine_spheres.push_back(Refine_sphere{
+                K::Point_3(cx, cy, cz), inner * inner, outer * outer, size});
+            std::cout << "Local refinement shell at (" << cx << ", " << cy << ", "
+                      << cz << ") inner " << inner << " outer " << outer << " size "
+                      << size << "\n\n";
           } else {
             std::cerr << "Unknown size field setting: " << line << ".\n\n";
             std::cerr << "patch setting example: patch 0 1 0.1 0.01\n";
@@ -340,6 +394,11 @@ int main(int argc, char *argv[]) {
             std::cerr << "component setting example: component 1 0.1\n";
             std::cerr
                 << "The above line sets the cell size of component 0 to 0.1\n";
+            std::cerr << "sphere setting example: sphere 0 0 0 0 0.1 0.01\n";
+            std::cerr
+                << "The above line refines cells/facets within the spherical "
+                   "shell between inner radius 0 and outer radius 0.1 around "
+                   "(0,0,0) down to size 0.01 (a solid ball when inner is 0)\n";
             std::cerr
                 << "Note that component 0 denotes the outer space, so the "
                    "actual "
@@ -474,11 +533,18 @@ int main(int argc, char *argv[]) {
                              domain.index_from_subdomain_index(c.first));
     }
 
+    // Overlay any local refinement spheres on the per-label fields so the mesh is
+    // refined only near thin gaps. Facet distance is scaled down (0.25) so refined
+    // facets hug the surface tightly enough to keep the gap open.
+    Spatial_sizing_field fc_size_spatial{fc_size_field, refine_spheres, 1.0};
+    Spatial_sizing_field fc_length_spatial{fc_length_field, refine_spheres, 0.25};
+    Spatial_sizing_field cc_size_spatial{cc_size_field, refine_spheres, 1.0};
+
     // Set mesh criteria
     Facet_criteria facet_criteria(
-        vm["fc-angle"].as<double>(), fc_size_field, fc_length_field,
+        vm["fc-angle"].as<double>(), fc_size_spatial, fc_length_spatial,
         CGAL::FACET_VERTICES_ON_SURFACE, vm["fc-minsize"].as<double>());
-    Cell_criteria cell_criteria(vm["cc-ratio"].as<double>(), cc_size_field);
+    Cell_criteria cell_criteria(vm["cc-ratio"].as<double>(), cc_size_spatial);
     Mesh_criteria criteria(facet_criteria, cell_criteria);
     // Mesh generation
 
