@@ -34,6 +34,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
 #include <CGAL/Polygon_mesh_processing/intersection.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_traits_3.h>
+#include <CGAL/AABB_triangle_primitive_3.h>
+#include <CGAL/IO/polygon_soup_io.h>
+#include <memory>
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 
@@ -87,6 +92,27 @@ struct Refine_sphere {
   double size;
 };
 
+// AABB tree over a marker surface's triangles, for distance-to-surface queries.
+// Built from a polygon SOUP (a raw triangle list), so non-manifold / unoriented
+// active-zone patches — which CGAL's Surface_mesh reader rejects — are handled fine;
+// distance queries don't need a manifold mesh.
+typedef std::vector<K::Triangle_3> TriangleList;
+typedef CGAL::AABB_triangle_primitive_3<K, TriangleList::const_iterator> AABB_prim;
+typedef CGAL::AABB_traits_3<K, AABB_prim> AABB_traits_t;
+typedef CGAL::AABB_tree<AABB_traits_t> AABB_tree_t;
+
+// A local refinement region defined by a MARKER SURFACE: cells/facets whose query
+// point lies within `dist` of the marker (e.g. an active-zone membrane patch) are
+// sized down to `size`. Unlike a sphere, this conforms to the marker's actual shape
+// — the faithful way to refine an arbitrary morphology marking. The triangle list is
+// kept alive alongside the AABB tree it backs (the tree stores iterators into it).
+struct Refine_surface {
+  std::shared_ptr<TriangleList> tris;
+  std::shared_ptr<AABB_tree_t> tree;
+  double dist_sq;
+  double size;
+};
+
 // Spatial sizing field: the per-label constant field, locally overridden (taking the
 // minimum) inside any Refine_sphere shell. Lets the mesher refine ONLY near thin
 // inter-compartment gaps instead of refining a whole boundary patch globally.
@@ -97,7 +123,8 @@ struct Spatial_sizing_field {
   typedef Mesh_domain::Index Index;
   Sizing_field base;
   std::vector<Refine_sphere> spheres;
-  double size_scale;   // applied to each sphere's size (e.g. 0.25 for facet distance)
+  std::vector<Refine_surface> surfaces;
+  double size_scale;   // applied to each region's size (e.g. 0.25 for facet distance)
 
   FT operator()(const Point_3 &p, const int dim, const Index &index) const {
     FT s = base(p, dim, index);
@@ -108,6 +135,13 @@ struct Spatial_sizing_field {
       const double d2 = dx * dx + dy * dy + dz * dz;
       if (d2 >= sp.inner_sq && d2 <= sp.outer_sq) {
         const FT local = sp.size * size_scale;
+        if (local < s)
+          s = local;
+      }
+    }
+    for (const Refine_surface &rs : surfaces) {
+      if (CGAL::to_double(rs.tree->squared_distance(p)) <= rs.dist_sq) {
+        const FT local = rs.size * size_scale;
         if (local < s)
           s = local;
       }
@@ -327,6 +361,7 @@ int main(int argc, char *argv[]) {
     std::map<std::pair<int, int>, double> fc_length_field_map;
     std::map<int, double> cc_size_field_map;
     std::vector<Refine_sphere> refine_spheres;
+    std::vector<Refine_surface> refine_surfaces;
 
     if (vm.count("size-field-file")) {
       std::vector<std::string> size_field_settings;
@@ -385,6 +420,30 @@ int main(int argc, char *argv[]) {
             std::cout << "Local refinement shell at (" << cx << ", " << cy << ", "
                       << cz << ") inner " << inner << " outer " << outer << " size "
                       << size << "\n\n";
+          } else if (fields[0] == "surface" && fields.size() == 4) {
+            // surface PATH DIST SIZE -> refine within DIST of a marker surface.
+            // Read as a polygon soup (handles non-manifold/unoriented patches).
+            std::vector<K::Point_3> pts;
+            std::vector<std::vector<std::size_t>> polys;
+            if (!CGAL::IO::read_polygon_soup(fields[1], pts, polys) ||
+                polys.empty()) {
+              std::cerr << "Unable to read surface marker file " << fields[1]
+                        << "\n";
+              return EXIT_FAILURE;
+            }
+            auto tris = std::make_shared<TriangleList>();
+            for (const auto &poly : polys)
+              for (std::size_t i = 1; i + 1 < poly.size(); ++i)   // fan-triangulate
+                tris->emplace_back(pts[poly[0]], pts[poly[i]], pts[poly[i + 1]]);
+            double dist = std::stod(fields[2]);
+            double size = std::stod(fields[3]);
+            auto tree = std::make_shared<AABB_tree_t>(tris->begin(), tris->end());
+            tree->accelerate_distance_queries();
+            refine_surfaces.push_back(
+                Refine_surface{tris, tree, dist * dist, size});
+            std::cout << "Local refinement near surface " << fields[1]
+                      << " within " << dist << " to size " << size << " ("
+                      << tris->size() << " triangles)\n\n";
           } else {
             std::cerr << "Unknown size field setting: " << line << ".\n\n";
             std::cerr << "patch setting example: patch 0 1 0.1 0.01\n";
@@ -399,6 +458,11 @@ int main(int argc, char *argv[]) {
                 << "The above line refines cells/facets within the spherical "
                    "shell between inner radius 0 and outer radius 0.1 around "
                    "(0,0,0) down to size 0.01 (a solid ball when inner is 0)\n";
+            std::cerr << "surface setting example: surface marker.off 0.02 0.01\n";
+            std::cerr
+                << "The above line refines cells/facets within distance 0.02 of "
+                   "the marker surface marker.off down to size 0.01 (conforms to "
+                   "the marker's shape)\n";
             std::cerr
                 << "Note that component 0 denotes the outer space, so the "
                    "actual "
@@ -536,9 +600,12 @@ int main(int argc, char *argv[]) {
     // Overlay any local refinement spheres on the per-label fields so the mesh is
     // refined only near thin gaps. Facet distance is scaled down (0.25) so refined
     // facets hug the surface tightly enough to keep the gap open.
-    Spatial_sizing_field fc_size_spatial{fc_size_field, refine_spheres, 1.0};
-    Spatial_sizing_field fc_length_spatial{fc_length_field, refine_spheres, 0.25};
-    Spatial_sizing_field cc_size_spatial{cc_size_field, refine_spheres, 1.0};
+    Spatial_sizing_field fc_size_spatial{fc_size_field, refine_spheres,
+                                         refine_surfaces, 1.0};
+    Spatial_sizing_field fc_length_spatial{fc_length_field, refine_spheres,
+                                           refine_surfaces, 0.25};
+    Spatial_sizing_field cc_size_spatial{cc_size_field, refine_spheres,
+                                         refine_surfaces, 1.0};
 
     // Set mesh criteria
     Facet_criteria facet_criteria(

@@ -1,0 +1,6 @@
+# Local refinement near a marker surface (the `surface` directive).
+# Refine within 0.1 of the PSD surface mesh down to element size 0.012 -- the refined
+# region CONFORMS to the marker's shape (a shell hugging the PSD), unlike the
+# ball-shaped `sphere` directive. Distance is computed with a CGAL AABB tree over the
+# marker's triangles, so the marker can be any surface mesh CGAL can read.
+surface ../example/PSD.off 0.1 0.012

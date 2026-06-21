@@ -139,7 +139,21 @@ The commands below assume you are still in `MultiCompMesher/build`
             along a contact cost far fewer elements than refining an entire patch.
             Facet distance inside a sphere is scaled to a quarter of `SIZE` so the
             refined facets hug the surface tightly.
-    
+
+        5. Surface setting (local refinement near a marker surface)
+
+            ```
+            surface MARKER-OFF DISTANCE SIZE
+            ```
+            Refines cells and facets within `DISTANCE` of the marker surface mesh
+            `MARKER-OFF` (any format CGAL can read) down to `SIZE`. Like `sphere`
+            it is purely geometric, but it **conforms to the marker's shape** rather
+            than a ball — the faithful way to refine along an arbitrary morphology
+            marking (e.g. a synaptic active zone given as its own surface patch).
+            Distance is computed with a CGAL AABB tree over the marker's triangles.
+            For a flat patch this refines a slab hugging it; for many small markers,
+            prefer this over packing spheres.
+
     * Mainifoldness
 
         This program supports three manifoldness settings in mesh generation,
@@ -221,3 +235,17 @@ the dense tetrahedra confined to the ball (red outline), leaving the rest of the
 spine coarse — useful for refining a local region (or, with many small shells, a
 thin inter-compartment gap) without inflating the global element count.
 ![Sphere refinement cross-section](example/sphere_mesh_view.png)
+
+The `surface` directive refines near a **marker surface** instead of a ball, so the
+refined region follows the marker's shape. With [this size field](example/surface_sizefield.txt)
+— refine within `0.1` of the PSD surface down to `0.012` — the mesh stays coarse
+(`cc-size 0.1`) everywhere except in a shell hugging the PSD:
+```
+./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/surface-output --fc-size 0.1 --fc-distance 0.01 --cc-size 0.1 --odt --lloyd --perturb --exude --no-intersect-check --size-field-file ../example/surface_sizefield.txt
+```
+A vertical cross-section through [surface-output.mesh](example/surface-output.mesh)
+shows the dense tetrahedra **following the PSD surface** (red) — conforming to its
+shape — while the rest of the spine stays coarse. This is the faithful way to refine
+along an arbitrary morphology marking (e.g. a synaptic active zone supplied as its own
+surface patch) rather than approximating it with a ball.
+![Surface refinement cross-section](example/surface_mesh_view.png)
