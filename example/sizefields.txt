@@ -2,5 +2,3 @@
 patch 1 3 0.005 0.0001
 # component 2 (PSD)
 component 2 0.005
-# local refinement shell: refine within radius 0.01 of (0.1, 0.2, 0.3) to size 0.002
-sphere 0.1 0.2 0.3 0 0.01 0.002
