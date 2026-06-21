@@ -139,7 +139,21 @@ The commands below assume you are still in `MultiCompMesher/build`
             along a contact cost far fewer elements than refining an entire patch.
             Facet distance inside a sphere is scaled to a quarter of `SIZE` so the
             refined facets hug the surface tightly.
-    
+
+        5. Surface setting (local refinement near a marker surface)
+
+            ```
+            surface MARKER-OFF DISTANCE SIZE
+            ```
+            Refines cells and facets within `DISTANCE` of the marker surface mesh
+            `MARKER-OFF` (any format CGAL can read) down to `SIZE`. Like `sphere`
+            it is purely geometric, but it **conforms to the marker's shape** rather
+            than a ball — the faithful way to refine along an arbitrary morphology
+            marking (e.g. a synaptic active zone given as its own surface patch).
+            Distance is computed with a CGAL AABB tree over the marker's triangles.
+            For a flat patch this refines a slab hugging it; for many small markers,
+            prefer this over packing spheres.
+
     * Mainifoldness
 
         This program supports three manifoldness settings in mesh generation,
