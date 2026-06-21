@@ -193,8 +193,10 @@ The command to generate the mesh is
 ```
 # assumed still in MultiCompMesher/build
 
-./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/output --fc-size 0.01 --fc-distance 0.001 --cc-size 0.05 --odt --lloyd --perturb --exude
+./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/output --fc-size 0.01 --fc-distance 0.001 --cc-size 0.05 --odt --lloyd --perturb --exude --no-intersect-check
 ```
+(The example PSD surface sits inside the spine by design, so the components
+overlap; `--no-intersect-check` skips the intersection guard for this case.)
 The mesh is written to [output.mesh](example/output.mesh), then visualized
 in Gmsh. Note that each component is labeled and colored individually. To use the mesh in [STEPS](http://steps.sourceforge.net), the user needs to
 export it to the Abaqus inp format or the Gmsh 2.0 ASCii format in Gmsh.
@@ -203,6 +205,19 @@ export it to the Abaqus inp format or the Gmsh 2.0 ASCii format in Gmsh.
 Using [these sizing settings](example/sizefields.txt), we can decrease the global resolution but increase the
 resolution of the ER membrane, as well as the PSD region component, resulting in a geometry-adapted mesh.
 ```
-./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/sizing-output --fc-size 0.1 --fc-distance 0.01 --cc-size 0.1 --odt --lloyd --perturb --exude --size-field-file ../example/sizefields.txt 
+./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/sizing-output --fc-size 0.1 --fc-distance 0.01 --cc-size 0.1 --odt --lloyd --perturb --exude --no-intersect-check --size-field-file ../example/sizefields.txt 
 ```
 ![Mesh visualization in Gmsh](example/sizing_mesh_view.png)
+
+The `sphere` directive refines a purely geometric region rather than a named
+component. With [this size field](example/sphere_sizefield.txt) — a single solid
+ball centred on the ER — the mesh is coarse (`cc-size 0.1`) everywhere except
+inside the ball, which is refined to `0.012`:
+```
+./MultiCompMesher ../example/boundaries.txt ../example/components.txt ../example/sphere-output --fc-size 0.1 --fc-distance 0.01 --cc-size 0.1 --odt --lloyd --perturb --exude --no-intersect-check --size-field-file ../example/sphere_sizefield.txt
+```
+A cross-section through [sphere-output.mesh](example/sphere-output.mesh) shows
+the dense tetrahedra confined to the ball (red outline), leaving the rest of the
+spine coarse — useful for refining a local region (or, with many small shells, a
+thin inter-compartment gap) without inflating the global element count.
+![Sphere refinement cross-section](example/sphere_mesh_view.png)

@@ -1,0 +1,5 @@
+# Local refinement ball (the `sphere` directive).
+# Refine a solid ball of radius 0.1 centred on the ER (0.025, 0.42, 0.036) down to
+# element size 0.012 -- ~8x finer than the 0.1 bulk -- leaving the rest of the spine
+# coarse. INNER = 0 makes it a solid ball; set INNER > 0 for a shell.
+sphere 0.025 0.42 0.036 0 0.1 0.012
