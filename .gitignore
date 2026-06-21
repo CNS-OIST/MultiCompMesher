@@ -1,1 +1,8 @@
 build
+
+# OS / editor
+.DS_Store
+.vscode/
+
+# CodeGraph index
+.codegraph/
