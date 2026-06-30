@@ -43,6 +43,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <boost/program_options.hpp>
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <map>
@@ -505,10 +506,19 @@ int main(int argc, char *argv[]) {
         mesh_repaired = true;
       }
       if (mesh_repaired) {
-        std::string repaired_filename(boundary_files[i]);
-        append_str_before_suffix(repaired_filename, "_repaired");
-        CGAL::IO::write_polygon_mesh(repaired_filename, surface_meshes[i]);
-        std::cout << "Repaired mesh has been saved to " << repaired_filename << ".\n";
+        // Save the repaired surface next to the OUTPUT, not into the input
+        // directory. The repaired mesh is already loaded in surface_meshes[i]
+        // and used directly; this file is only a diagnostic copy. Writing it
+        // beside the input mutated the user's boundary directory and, worse,
+        // left a *_repaired.off that a re-run re-ingested as a duplicate
+        // boundary -- the duplicate then "intersects" its original and aborts.
+        std::filesystem::path repaired =
+            std::filesystem::path(output_file).parent_path() /
+            (std::filesystem::path(boundary_files[i]).stem().string() +
+             "_repaired.off");
+        CGAL::IO::write_polygon_mesh(repaired.string(), surface_meshes[i]);
+        std::cout << "Repaired mesh has been saved to " << repaired.string()
+                  << ".\n";
       }
     }
 
